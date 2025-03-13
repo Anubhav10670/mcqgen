@@ -5,9 +5,73 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + React + TS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <style>
+      h1 {
+        width: 100%;
+        text-align: center;
+      }
+      .pdfwork {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        width: 100%;
+      }
+      .pdfwork * {
+        margin-top: 5px;
+      }
+      textarea {
+        width: 80%;
+        height: 300px;
+        margin-top: 10px;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div class="pdfwork">
+      <span>Select PDF</span>
+      <input type="file" class="selectpdf">
+      <button class="upload">Upload</button>
+      <textarea id="text" class="w-full h-40 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-gray-50" placeholder="Paste your text here..." required></textarea>
+    </div>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+      
+      let pdfinput = document.querySelector(".selectpdf");
+      let upload = document.querySelector(".upload");
+      let pdftext = document.querySelector(".pdftext");
+
+      upload.addEventListener('click', () => {
+        let file = pdfinput.files[0];
+        if (file && file.type === "application/pdf") {
+          let fr = new FileReader();
+          fr.readAsDataURL(file);
+          fr.onload = () => {
+            extractText(fr.result);
+          }
+        } else {
+          alert("Please select a valid PDF file");
+        }
+      });
+
+      async function extractText(url) {
+        try {
+          let pdf = await pdfjsLib.getDocument(url).promise;
+          let fullText = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            let page = await pdf.getPage(i);
+            let txt = await page.getTextContent();
+            let text = txt.items.map((s) => s.str).join("");
+            fullText += `Page ${i}:\n${text}\n\n`;
+          }
+          document.getElementById('text').value = fullText;
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
