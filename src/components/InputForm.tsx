@@ -89,7 +89,7 @@ function InputForm({ onSubmit, loading }: InputFormProps) {
             onChange={(e) => setNumQuestions(Math.max(1, parseInt(e.target.value) || 1))}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-gray-50"
             min="10"
-            max="100"
+            max="30"
             required
           />
         </div>
