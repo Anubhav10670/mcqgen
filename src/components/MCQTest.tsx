@@ -9,8 +9,8 @@ interface MCQTestProps {
 
 function MCQTest({ questions, onReset }: MCQTestProps) {
   const [answers, setAnswers] = useState<string[]>(new Array(questions.length).fill(''));
-  const [submitted, setSubmitted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0); // Timer in seconds
 
@@ -64,13 +64,13 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const questionsAttempted = answers.filter((answer) => answer !== '').length;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-2xl"> {/* Increased size with max-w-2xl and p-8 */}
         {!submitted ? (
           <>
             {/* Header with Progress and Timer */}
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Magnets - Test 4</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2> {/* Changed to Generated Quiz */}
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">
                   {formatTime(timeSpent)}
@@ -79,7 +79,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
+            <div className="w-full h-2 bg-gray-200 rounded-full mb-6">
               <div
                 className="h-2 bg-pink-500 rounded-full"
                 style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
