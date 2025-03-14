@@ -19,19 +19,19 @@ function App() {
     setLoading(true);
     setError(null);
     
-    const prompt = `Generate ${numQuestions} multiple choice questions from the following text. Format the response as a JSON array where each question object has the format: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}\n\nText: ${text}`;
+    const prompt = `Generate ${numQuestions} multiple choice questions from the following text and dont stop while doing so also dont make qquestions from activities if there is. Format the response as a JSON array where each question object has the format: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}\n\nText: ${text}`;
 
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer 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',
+          'Authorization': 'Bearer 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',
           'HTTP-Referer': 'https://www.sitename.com',
           'X-Title': 'SiteName',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'qwen/qwen2.5-vl-72b-instruct:free',
+          model: 'rekaai/reka-flash-3:free',
           messages: [{ role: 'user', content: prompt }],
         }),
       });
