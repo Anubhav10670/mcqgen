@@ -19,7 +19,7 @@ function App() {
     setLoading(true);
     setError(null);
     
-    const prompt = `Generate ${numQuestions} multiple choice questions from the following text and dont stop while doing so also dont make qquestions from activities if there is. Format the response as a JSON array where each question object has the format: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}\n\nText: ${text}`;
+    const prompt = `Generate ${numQuestions} multiple choice questions from the following text. Format the response as a JSON array where each question object has the format: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}\n\nText: ${text}`;
 
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
