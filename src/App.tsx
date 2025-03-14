@@ -25,13 +25,13 @@ function App() {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer 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',
+          'Authorization': 'Bearer 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',
           'HTTP-Referer': 'https://www.sitename.com',
           'X-Title': 'SiteName',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'rekaai/reka-flash-3:free',
+          model: 'qwen/qwq-32b:free',
           messages: [{ role: 'user', content: prompt }],
         }),
       });
