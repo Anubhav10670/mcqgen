@@ -65,12 +65,12 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-2xl"> {/* Increased size with max-w-2xl and p-8 */}
+      <div className="bg-white rounded-lg p-8 w-full max-w-2xl"> {/* Removed shadow for cleaner look */}
         {!submitted ? (
           <>
             {/* Header with Progress and Timer */}
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2> {/* Changed to Generated Quiz */}
+              <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">
                   {formatTime(timeSpent)}
@@ -78,8 +78,8 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
               </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-2 bg-gray-200 rounded-full mb-6">
+            {/* Progress Bar - Removed border line */}
+            <div className="w-full h-2 mb-6">
               <div
                 className="h-2 bg-pink-500 rounded-full"
                 style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
@@ -91,14 +91,14 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
               <p className="font-medium text-gray-900 mb-3">
                 Question {currentQuestionIndex + 1} of {questions.length}
               </p>
-              <p className="font-medium text-gray-900 mb-3">
+              <p className="font-medium text-gray-900 mb-4 text-lg">
                 {questions[currentQuestionIndex].question}
               </p>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {questions[currentQuestionIndex].options.map((option, optionIndex) => (
                   <label
                     key={optionIndex}
-                    className={`block p-3 rounded-lg border cursor-pointer transition-colors
+                    className={`block p-4 rounded-lg border cursor-pointer transition-colors
                       ${answers[currentQuestionIndex] === option
                         ? 'bg-pink-100 border-pink-300'
                         : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -187,19 +187,19 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                 </svg>
               </div>
 
-              {/* Stats */}
-              <div className="flex justify-around mb-4">
-                <div className="p-3 bg-pink-50 rounded-lg">
+              {/* Stats - Cleaner design without heavy borders */}
+              <div className="flex justify-around mb-6">
+                <div className="p-4 bg-pink-50 rounded-lg">
                   <p className="text-gray-900 font-medium">{questionsAttempted}</p>
                   <p className="text-gray-600 text-sm">Questions Attempted</p>
                 </div>
-                <div className="p-3 bg-pink-50 rounded-lg">
+                <div className="p-4 bg-pink-50 rounded-lg">
                   <p className="text-gray-900 font-medium">{formatTime(timeSpent)}</p>
                   <p className="text-gray-600 text-sm">Time Spent</p>
                 </div>
               </div>
 
-              {/* Show Question Details Button */}
+              {/* Show/Hide Question Details Button */}
               <button
                 onClick={() => setShowDetails(!showDetails)}
                 className="w-full py-2 mb-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
@@ -207,24 +207,24 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                 {showDetails ? 'Hide Question Details' : 'Show Question Details'}
               </button>
 
-              {/* Question Details */}
+              {/* Question Details - Cleaner design */}
               {showDetails && (
-                <div className="mt-4">
+                <div className="mt-6">
                   {questions.map((question, index) => (
-                    <div key={index} className="mb-6 pb-6 border-b border-gray-100 last:border-0">
+                    <div key={index} className="mb-6 pb-6 last:pb-0">
                       <p className="font-medium text-gray-900 mb-3">
                         {index + 1}. {question.question}
                       </p>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {question.options.map((option, optionIndex) => (
                           <div
                             key={optionIndex}
-                            className={`block p-3 rounded-lg border
+                            className={`block p-4 rounded-lg
                               ${question.correctAnswer === option
-                                ? 'bg-green-50 border-green-200'
+                                ? 'bg-green-50'
                                 : answers[index] === option
-                                  ? 'bg-red-50 border-red-200'
-                                  : 'bg-white border-gray-200'
+                                  ? 'bg-red-50'
+                                  : 'bg-white'
                               }`}
                           >
                             <div className="flex items-center gap-3">
