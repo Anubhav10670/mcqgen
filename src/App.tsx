@@ -25,13 +25,13 @@ function App() {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer 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',
+          'Authorization': 'Bearer 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',
           'HTTP-Referer': 'https://www.sitename.com',
           'X-Title': 'SiteName',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'mistralai/mistral-small-24b-instruct-2501:free',
+          model: 'undi95/toppy-m-7b:free',
           messages: [{ role: 'user', content: prompt }],
         }),
       });
