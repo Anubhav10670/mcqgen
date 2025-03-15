@@ -19,7 +19,7 @@ function App() {
     setLoading(true);
     setError(null);
     
-    const prompt = " I want you to generate ${numQuestions} multiple-choice quiz questions based on the following text. The output should be strictly in valid JSON format, containing only the questions, options, and correct answers. The JSON should be correct with no syntax errors and should avoid using backticks or any other formatting characters. Do not include any additional remarks, reasoning, or explanations—only the JSON output. Format the response as a JSON array where each question object follows this structure: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}. Ensure the JSON is valid and contains meaningful questions. Do not make any errors in the JSON file, and format it carefully. Text: ${text} ";
+const prompt = `I want you to generate ${numQuestions} multiple-choice quiz questions based on the following text. The output should be strictly in valid JSON format, containing only the questions, options, and correct answers. The JSON should be correct with no syntax errors and should avoid using backticks or any other formatting characters. Do not include any additional remarks, reasoning, or explanations—only the JSON output. Format the response as a JSON array where each question object follows this structure: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}. Ensure the JSON is valid and contains meaningful questions. Do not make any errors in the JSON file, and format it carefully. Text: ${text}`;
 
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
