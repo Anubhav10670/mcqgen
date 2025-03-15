@@ -19,7 +19,7 @@ function App() {
     setLoading(true);
     setError(null);
     
-    const prompt = ` I want you to Generate ${numQuestions} multiple-choice quiz based on the following text. The output should be strictly in JSON format, containing only the questions, options, and correct answers (avoid activities if there to make mcqs and make useful mcqs with value).DO not make errors in json file , makeit carefully . Do not include any additional remarks, reasoning, or explanation. Format the response as a JSON array where each question object has the format: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}\n\nText: ${text}`;
+    const prompt = ` I want you to Generate ${numQuestions} multiple-choice quiz based on the following text. The output should be strictly in JSON format, containing only the questions, options, and correct answers (avoid activities if there to make mcqs and make useful mcqs with value).DO not make errors in json file , makeit carefully . Do not include any additional remarks, reasoning, or explanation , only output in json remember no remarks/comments. Format the response as a JSON array where each question object has the format: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}\n\nText: ${text}`;
 
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
