@@ -25,7 +25,7 @@ function App() {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': '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',
+          'Authorization': 'Bearer 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',
           'HTTP-Referer': 'https://www.sitename.com',
           'X-Title': 'SiteName',
           'Content-Type': 'application/json',
