@@ -8,7 +8,7 @@ interface InputFormProps {
 
 function InputForm({ onSubmit, loading }: InputFormProps) {
   const [text, setText] = useState('');
-  const [numQuestions, setNumQuestions] = useState(10);
+  const [numQuestions, setNumQuestions] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
