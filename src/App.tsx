@@ -25,13 +25,13 @@ const prompt = `I want you to generate ${numQuestions} multiple-choice quiz ques
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer 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',
+          'Authorization': 'Bearer ${apikey}',
           'HTTP-Referer': 'https://www.sitename.com',
           'X-Title': 'SiteName',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'qwen/qwen-2-7b-instruct:free',
+          model: 'qwen/qwen2.5-vl-72b-instruct:free',
           messages: [{ role: 'user', content: prompt }],
         }),
       });
