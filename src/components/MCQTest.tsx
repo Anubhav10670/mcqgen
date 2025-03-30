@@ -253,7 +253,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                   Try Again
                 </button>
                 <a
-                  href="ncertquest.netlify.app/dashboard"
+                  href="ncertquest.netlify.app"
                   className="flex-1 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 flex items-center justify-center"
                 >
                   Dashboard
