@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { CheckCircle, XCircle, RotateCcw, X } from 'lucide-react';
 import type { Question } from '../App';
 
 interface MCQTestProps {
@@ -13,9 +13,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const [submitted, setSubmitted] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
-  const [explanationsShown, setExplanationsShown] = useState<boolean[]>(
-    new Array(questions.length).fill(false)
-  );
+  const [selectedExplanation, setSelectedExplanation] = useState<string | null>(null);
 
   useEffect(() => {
     if (!submitted) {
@@ -61,19 +59,13 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     setSubmitted(true);
   };
 
-  const toggleExplanation = (index: number) => {
-    const updated = [...explanationsShown];
-    updated[index] = !updated[index];
-    setExplanationsShown(updated);
-  };
-
   const score = calculateScore();
   const percentage = Math.round((score / questions.length) * 100);
   const questionsAttempted = answers.filter((answer) => answer !== '').length;
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-8 w-full max-w-2xl">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
+      <div className="bg-white rounded-lg p-8 w-full max-w-2xl z-10">
         {!submitted ? (
           <>
             <div className="flex justify-between items-center mb-6">
@@ -204,7 +196,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
               </button>
 
               {showDetails && (
-                <div className="mt-6">
+                <div className="mt-6 text-left">
                   {questions.map((question, index) => (
                     <div key={index} className="mb-6 pb-6 border-b last:border-none">
                       <p className="font-medium text-gray-900 mb-3">
@@ -236,19 +228,12 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                       </div>
 
                       {question.explanation && (
-                        <>
-                          <button
-                            onClick={() => toggleExplanation(index)}
-                            className="text-sm text-pink-600 hover:underline transition-colors"
-                          >
-                            {explanationsShown[index] ? "Hide Explanation" : "Show Explanation"}
-                          </button>
-                          {explanationsShown[index] && (
-                            <div className="mt-2 p-4 bg-pink-50 text-gray-800 rounded-lg border border-pink-200">
-                              <strong>Explanation:</strong> {question.explanation}
-                            </div>
-                          )}
-                        </>
+                        <button
+                          onClick={() => setSelectedExplanation(question.explanation!)}
+                          className="text-sm text-pink-600 hover:underline transition-colors"
+                        >
+                          Show Explanation
+                        </button>
                       )}
                     </div>
                   ))}
@@ -274,6 +259,22 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
           </>
         )}
       </div>
+
+      {/* EXPLANATION MODAL */}
+      {selectedExplanation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full relative shadow-xl">
+            <button
+              onClick={() => setSelectedExplanation(null)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Explanation</h3>
+            <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
