@@ -12,9 +12,11 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [timeSpent, setTimeSpent] = useState(0); // Timer in seconds
+  const [timeSpent, setTimeSpent] = useState(0);
+  const [explanationsShown, setExplanationsShown] = useState<boolean[]>(
+    new Array(questions.length).fill(false)
+  );
 
-  // Timer logic
   useEffect(() => {
     if (!submitted) {
       const timer = setInterval(() => {
@@ -59,26 +61,26 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     setSubmitted(true);
   };
 
+  const toggleExplanation = (index: number) => {
+    const updated = [...explanationsShown];
+    updated[index] = !updated[index];
+    setExplanationsShown(updated);
+  };
+
   const score = calculateScore();
   const percentage = Math.round((score / questions.length) * 100);
   const questionsAttempted = answers.filter((answer) => answer !== '').length;
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-8 w-full max-w-2xl"> {/* Removed shadow for cleaner look */}
+      <div className="bg-white rounded-lg p-8 w-full max-w-2xl">
         {!submitted ? (
           <>
-            {/* Header with Progress and Timer */}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">
-                  {formatTime(timeSpent)}
-                </span>
-              </div>
+              <span className="text-sm text-gray-600">{formatTime(timeSpent)}</span>
             </div>
 
-            {/* Progress Bar - Removed border line */}
             <div className="w-full h-2 mb-6">
               <div
                 className="h-2 bg-pink-500 rounded-full"
@@ -86,7 +88,6 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
               ></div>
             </div>
 
-            {/* Question Section */}
             <div className="mb-6">
               <p className="font-medium text-gray-900 mb-3">
                 Question {currentQuestionIndex + 1} of {questions.length}
@@ -121,7 +122,6 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
               </div>
             </div>
 
-            {/* Navigation Buttons */}
             <div className="flex justify-between">
               <button
                 onClick={handlePrevious}
@@ -151,12 +151,10 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
           </>
         ) : (
           <>
-            {/* Results Section */}
             <div className="text-center">
               <p className="text-3xl font-semibold text-gray-900 mb-2">{percentage}%</p>
               <p className="text-gray-600 mb-4">Your Score</p>
 
-              {/* Circular Progress Indicator */}
               <div className="relative w-32 h-32 mx-auto mb-4">
                 <svg className="w-full h-full" viewBox="0 0 100 100">
                   <circle
@@ -187,7 +185,6 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                 </svg>
               </div>
 
-              {/* Stats - Cleaner design without heavy borders */}
               <div className="flex justify-around mb-6">
                 <div className="p-4 bg-pink-50 rounded-lg">
                   <p className="text-gray-900 font-medium">{questionsAttempted}</p>
@@ -199,7 +196,6 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                 </div>
               </div>
 
-              {/* Show/Hide Question Details Button */}
               <button
                 onClick={() => setShowDetails(!showDetails)}
                 className="w-full py-2 mb-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
@@ -207,15 +203,15 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                 {showDetails ? 'Hide Question Details' : 'Show Question Details'}
               </button>
 
-              {/* Question Details - Cleaner design */}
               {showDetails && (
                 <div className="mt-6">
                   {questions.map((question, index) => (
-                    <div key={index} className="mb-6 pb-6 last:pb-0">
+                    <div key={index} className="mb-6 pb-6 border-b last:border-none">
                       <p className="font-medium text-gray-900 mb-3">
                         {index + 1}. {question.question}
                       </p>
-                      <div className="space-y-3">
+
+                      <div className="space-y-3 mb-2">
                         {question.options.map((option, optionIndex) => (
                           <div
                             key={optionIndex}
@@ -238,13 +234,28 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                           </div>
                         ))}
                       </div>
+
+                      {question.explanation && (
+                        <>
+                          <button
+                            onClick={() => toggleExplanation(index)}
+                            className="text-sm text-pink-600 hover:underline transition-colors"
+                          >
+                            {explanationsShown[index] ? "Hide Explanation" : "Show Explanation"}
+                          </button>
+                          {explanationsShown[index] && (
+                            <div className="mt-2 p-4 bg-pink-50 text-gray-800 rounded-lg border border-pink-200">
+                              <strong>Explanation:</strong> {question.explanation}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex justify-between gap-2">
+              <div className="flex justify-between gap-2 mt-6">
                 <button
                   onClick={onReset}
                   className="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 flex items-center justify-center gap-1"
@@ -253,7 +264,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                   Try Again
                 </button>
                 <a
-                  href="ncertquest.netlify.app/dashboard"
+                  href="https://ncertquest.netlify.app/dashboard"
                   className="flex-1 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 flex items-center justify-center"
                 >
                   Dashboard
