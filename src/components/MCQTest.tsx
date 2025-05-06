@@ -1,11 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, XCircle, RotateCcw, X, Volume2, VolumeX } from 'lucide-react';
+import { CheckCircle, XCircle, RotateCcw, X, Volume2, VolumeX, BookOpen } from 'lucide-react';
 import type { Question } from '../App';
 
 interface MCQTestProps {
   questions: Question[];
   onReset: () => void;
 }
+
+// Placeholder for authentication and AI API
+interface AIConfig {
+  apiKey: string;
+  endpoint: string;
+}
+
+// This will be replaced with real implementation when the AI service is integrated
+const aiConfig: AIConfig = {
+  apiKey: "YOUR_API_KEY_HERE",
+  endpoint: "YOUR_AI_API_ENDPOINT"
+};
 
 function MCQTest({ questions, onReset }: MCQTestProps) {
   const [answers, setAnswers] = useState<string[]>(new Array(questions.length).fill(''));
@@ -16,6 +28,8 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const [selectedExplanation, setSelectedExplanation] = useState<string | null>(null);
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
   const [speakerIconsVisible, setSpeakerIconsVisible] = useState(true);
+  const [isGeneratingExplanation, setIsGeneratingExplanation] = useState(false);
+  const [generatedExplanations, setGeneratedExplanations] = useState<{[key: number]: string}>({});
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapTime = useRef<number>(0);
@@ -156,6 +170,64 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
 
   const readOption = (option: string) => {
     readText(option);
+  };
+
+  // Function to generate explanation using AI (placeholder for now)
+  const generateExplanation = async (questionIndex: number) => {
+    if (generatedExplanations[questionIndex]) {
+      setSelectedExplanation(generatedExplanations[questionIndex]);
+      return;
+    }
+
+    setIsGeneratingExplanation(true);
+    
+    try {
+      // This is a placeholder for the actual AI API call
+      // In the future, this will be replaced with a real API call to generate explanations
+      
+      // Mock API call simulation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const question = questions[questionIndex];
+      const mockResponse = `This is a generated explanation for the question: "${question.question}".
+      
+The correct answer is "${question.correctAnswer}".
+
+Explanation: ${question.explanation || "The answer can be determined by analyzing the key concepts related to this question. The correct option is the most accurate based on the principles covered in the NCERT material."}
+
+Additional information will be provided by the AI when properly integrated.`;
+      
+      // In the real implementation, you would make an API call to your AI service:
+      /*
+      const response = await fetch(aiConfig.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${aiConfig.apiKey}`
+        },
+        body: JSON.stringify({
+          question: question.question,
+          options: question.options,
+          correctAnswer: question.correctAnswer,
+          userAnswer: answers[questionIndex]
+        })
+      });
+      
+      const data = await response.json();
+      const generatedExplanation = data.explanation;
+      */
+      
+      const newExplanations = { ...generatedExplanations };
+      newExplanations[questionIndex] = mockResponse;
+      
+      setGeneratedExplanations(newExplanations);
+      setSelectedExplanation(mockResponse);
+    } catch (error) {
+      console.error("Error generating explanation:", error);
+      setSelectedExplanation("Sorry, there was an error generating the explanation. Please try again later.");
+    } finally {
+      setIsGeneratingExplanation(false);
+    }
   };
 
   const score = calculateScore();
@@ -344,26 +416,28 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                         <p className="font-medium text-gray-900">
                           {index + 1}. {question.question}
                         </p>
-                        {isSpeechEnabled && (
-                          <button 
-                            onClick={() => {
-                              let textToRead = question.question + ". ";
-                              textToRead += "Options: ";
-                              question.options.forEach((opt, i) => {
-                                textToRead += `Option ${i + 1}: ${opt}. `;
-                              });
-                              textToRead += `The correct answer is: ${question.correctAnswer}`;
-                              readText(textToRead);
-                            }}
-                            className="flex-shrink-0 p-1 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
-                            title="Read question and options"
-                          >
-                            <Volume2 className="h-5 w-5 text-pink-500" />
-                          </button>
-                        )}
+                        <div className="flex gap-2">
+                          {isSpeechEnabled && (
+                            <button 
+                              onClick={() => {
+                                let textToRead = question.question + ". ";
+                                textToRead += "Options: ";
+                                question.options.forEach((opt, i) => {
+                                  textToRead += `Option ${i + 1}: ${opt}. `;
+                                });
+                                textToRead += `The correct answer is: ${question.correctAnswer}`;
+                                readText(textToRead);
+                              }}
+                              className="flex-shrink-0 p-1 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
+                              title="Read question and options"
+                            >
+                              <Volume2 className="h-5 w-5 text-pink-500" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="space-y-3 mb-2">
+                      <div className="space-y-3 mb-4">
                         {question.options.map((option, optionIndex) => (
                           <div
                             key={optionIndex}
@@ -387,14 +461,13 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                         ))}
                       </div>
 
-                      {question.explanation && (
-                        <button
-                          onClick={() => setSelectedExplanation(question.explanation!)}
-                          className="text-sm text-pink-600 hover:underline transition-colors"
-                        >
-                          Show Explanation
-                        </button>
-                      )}
+                      <button
+                        onClick={() => generateExplanation(index)}
+                        className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 flex items-center gap-2 text-sm"
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        {generatedExplanations[index] ? "View Explanation" : "Generate AI Explanation"}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -430,19 +503,30 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Explanation</h3>
-            <div className="flex gap-2 items-center mb-4">
-              <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
-              {isSpeechEnabled && (
-                <button
-                  onClick={() => readText(selectedExplanation || "")}
-                  className="text-pink-500 hover:text-pink-600 flex-shrink-0"
-                  title="Read explanation"
-                >
-                  <Volume2 className="h-5 w-5" />
-                </button>
-              )}
-            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-indigo-500" />
+              AI-Generated Explanation
+            </h3>
+            
+            {isGeneratingExplanation ? (
+              <div className="flex flex-col items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                <p className="mt-2 text-gray-600">Generating explanation...</p>
+              </div>
+            ) : (
+              <div className="flex gap-2 items-start">
+                <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
+                {isSpeechEnabled && (
+                  <button
+                    onClick={() => readText(selectedExplanation || "")}
+                    className="text-pink-500 hover:text-pink-600 flex-shrink-0 mt-1"
+                    title="Read explanation"
+                  >
+                    <Volume2 className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
