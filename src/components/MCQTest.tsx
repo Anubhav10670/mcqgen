@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, XCircle, RotateCcw, X, Volume2, VolumeX, BookOpen } from 'lucide-react';
+import { CheckCircle, XCircle, RotateCcw, X, Volume2, VolumeX, BookOpen, Sparkles } from 'lucide-react';
 import type { Question } from '../App';
 
 interface MCQTestProps {
@@ -7,16 +7,22 @@ interface MCQTestProps {
   onReset: () => void;
 }
 
-// Placeholder for authentication and AI API
+// OpenRouter API configuration
 interface AIConfig {
   apiKey: string;
   endpoint: string;
+  model: string;
+  referer: string;
+  siteTitle: string;
 }
 
-// This will be replaced with real implementation when the AI service is integrated
+// OpenRouter configuration with the provided API key
 const aiConfig: AIConfig = {
-  apiKey: "YOUR_API_KEY_HERE",
-  endpoint: "YOUR_AI_API_ENDPOINT"
+  apiKey: "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",
+  endpoint: "https://openrouter.ai/api/v1/chat/completions",
+  model: "qwen/qwen3-32b:free",
+  referer: window.location.origin, // Using the current site as referer
+  siteTitle: "NCERTQuest" // Your app name
 };
 
 function MCQTest({ questions, onReset }: MCQTestProps) {
@@ -172,7 +178,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     readText(option);
   };
 
-  // Function to generate explanation using AI (placeholder for now)
+  // Function to generate explanation using OpenRouter AI API
   const generateExplanation = async (questionIndex: number) => {
     if (generatedExplanations[questionIndex]) {
       setSelectedExplanation(generatedExplanations[questionIndex]);
@@ -182,46 +188,66 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     setIsGeneratingExplanation(true);
     
     try {
-      // This is a placeholder for the actual AI API call
-      // In the future, this will be replaced with a real API call to generate explanations
-      
-      // Mock API call simulation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       const question = questions[questionIndex];
-      const mockResponse = `This is a generated explanation for the question: "${question.question}".
+      const userAnswer = answers[questionIndex];
+      const isCorrect = question.correctAnswer === userAnswer;
       
-The correct answer is "${question.correctAnswer}".
+      // Create the prompt for the AI
+      const prompt = `
+You are an educational assistant helping students understand quiz questions.
 
-Explanation: ${question.explanation || "The answer can be determined by analyzing the key concepts related to this question. The correct option is the most accurate based on the principles covered in the NCERT material."}
+Question: ${question.question}
 
-Additional information will be provided by the AI when properly integrated.`;
+Options:
+${question.options.map((opt, i) => `${i+1}. ${opt}`).join('\n')}
+
+Correct answer: ${question.correctAnswer}
+Student's answer: ${userAnswer}
+Was the student correct? ${isCorrect ? 'Yes' : 'No'}
+
+Please provide a detailed explanation of why the correct answer is right, and why the other options are wrong. 
+Include relevant concepts, examples, and connections to NCERT material where possible.
+Keep your explanation clear, educational, and around 150-200 words.
+`;
       
-      // In the real implementation, you would make an API call to your AI service:
-      /*
+      // Make the API call to OpenRouter
       const response = await fetch(aiConfig.endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${aiConfig.apiKey}`
+          "Authorization": `Bearer ${aiConfig.apiKey}`,
+          "HTTP-Referer": aiConfig.referer,
+          "X-Title": aiConfig.siteTitle,
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          question: question.question,
-          options: question.options,
-          correctAnswer: question.correctAnswer,
-          userAnswer: answers[questionIndex]
+          "model": aiConfig.model,
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an educational assistant that creates clear, helpful explanations for quiz questions."
+            },
+            {
+              "role": "user",
+              "content": prompt
+            }
+          ],
+          "temperature": 0.7,
+          "max_tokens": 500
         })
       });
       
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
       const data = await response.json();
-      const generatedExplanation = data.explanation;
-      */
+      const generatedExplanation = data.choices[0].message.content;
       
       const newExplanations = { ...generatedExplanations };
-      newExplanations[questionIndex] = mockResponse;
+      newExplanations[questionIndex] = generatedExplanation;
       
       setGeneratedExplanations(newExplanations);
-      setSelectedExplanation(mockResponse);
+      setSelectedExplanation(generatedExplanation);
     } catch (error) {
       console.error("Error generating explanation:", error);
       setSelectedExplanation("Sorry, there was an error generating the explanation. Please try again later.");
@@ -464,9 +490,16 @@ Additional information will be provided by the AI when properly integrated.`;
                       <button
                         onClick={() => generateExplanation(index)}
                         className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 flex items-center gap-2 text-sm"
+                        disabled={isGeneratingExplanation}
                       >
                         <BookOpen className="h-4 w-4" />
-                        {generatedExplanations[index] ? "View Explanation" : "Generate AI Explanation"}
+                        {isGeneratingExplanation && !generatedExplanations[index] ? "Generating..." : 
+                         generatedExplanations[index] ? "View Explanation" : (
+                          <>
+                            <Sparkles className="h-3 w-3" />
+                            Generate AI Explanation
+                          </>
+                         )}
                       </button>
                     </div>
                   ))}
@@ -506,6 +539,7 @@ Additional information will be provided by the AI when properly integrated.`;
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-indigo-500" />
               AI-Generated Explanation
+              <span className="ml-auto text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded">Powered by Qwen 3</span>
             </h3>
             
             {isGeneratingExplanation ? (
