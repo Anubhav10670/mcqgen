@@ -21,8 +21,8 @@ const aiConfig: AIConfig = {
   apiKey: "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",
   endpoint: "https://openrouter.ai/api/v1/chat/completions",
   model: "qwen/qwen3-32b:free",
-  referer: window.location.origin, // Using the current site as referer
-  siteTitle: "NCERTQuest" // Your app name
+  referer: window.location.origin, 
+  siteTitle: "NCERTquest" 
 };
 
 function MCQTest({ questions, onReset }: MCQTestProps) {
@@ -97,7 +97,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const readText = (text: string) => {
     if (!isSpeechEnabled || !speechSynthesisRef.current) return;
     
-    // Cancel any ongoing speech
+    // canel speech
     speechSynthesisRef.current.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
@@ -136,7 +136,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
       }
     }
     
-    // Toggle both the speech functionality and icon visibility
+    // Toggle  speech functionality and icon 
     setIsSpeechEnabled(!isSpeechEnabled);
     setSpeakerIconsVisible(!speakerIconsVisible);
   };
@@ -168,7 +168,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
 
   const handleSubmit = () => {
     setSubmitted(true);
-    // Stop any ongoing speech
+
     if (speechSynthesisRef.current) {
       speechSynthesisRef.current.cancel();
     }
@@ -178,7 +178,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     readText(option);
   };
 
-  // Function to generate explanation using OpenRouter AI API
+  // generate explanation using OpenRouter AI API
   const generateExplanation = async (questionIndex: number) => {
     if (generatedExplanations[questionIndex]) {
       setSelectedExplanation(generatedExplanations[questionIndex]);
