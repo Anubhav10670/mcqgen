@@ -539,7 +539,7 @@ Keep your explanation clear, educational, and around 150-200 words.
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-indigo-500" />
               AI-Generated Explanation
-              <span className="ml-auto text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded">Powered by Qwen 3</span>
+              <span className="ml-auto text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded">Powered by AI</span>
             </h3>
             
             {isGeneratingExplanation ? (
