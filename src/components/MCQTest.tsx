@@ -170,6 +170,17 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2>
               <div className="flex items-center gap-3">
+                  <button 
+                  onClick={toggleMasterSpeech}
+                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                  title={isSpeechEnabled ? "Mute all speech" : "Unmute speech"}
+                >
+                  {isSpeechEnabled ? (
+                    <Volume2 className="h-5 w-5 text-pink-500" />
+                  ) : (
+                    <VolumeX className="h-5 w-5 text-gray-500" />
+                  )}
+                </button>
                 
                 <span className="text-sm text-gray-600">{formatTime(timeSpent)}</span>
               </div>
@@ -187,15 +198,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                 <p className="font-medium text-gray-900">
                   Question {currentQuestionIndex + 1} of {questions.length}
                 </p>
-                <button 
-                  onClick={readCurrentQuestionAndOptions}
-                  className={`flex-shrink-0 p-2 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors ${!isSpeechEnabled && 'opacity-50'}`}
-                  title="Read question and options"
-                  disabled={!isSpeechEnabled}
-                >
-                  {/* Speaker Icon for reading question and options */}
-                  <Volume2 className="h-6 w-6 text-pink-500" />
-                </button>
+                
               </div>
               <div className="flex gap-2 items-center mb-4">
                 <p className="font-medium text-gray-900 text-lg">
