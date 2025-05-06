@@ -34,7 +34,8 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const [selectedExplanation, setSelectedExplanation] = useState<string | null>(null);
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
   const [speakerIconsVisible, setSpeakerIconsVisible] = useState(true);
-  const [isGeneratingExplanation, setIsGeneratingExplanation] = useState(false);
+  // Change this to track loading state for each question
+  const [generatingExplanationIndices, setGeneratingExplanationIndices] = useState<number[]>([]);
   const [generatedExplanations, setGeneratedExplanations] = useState<{[key: number]: string}>({});
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -178,6 +179,11 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     readText(option);
   };
 
+  // Check if a specific question is currently generating an explanation
+  const isGeneratingExplanationForQuestion = (questionIndex: number) => {
+    return generatingExplanationIndices.includes(questionIndex);
+  };
+
   // generate explanation using OpenRouter AI API
   const generateExplanation = async (questionIndex: number) => {
     if (generatedExplanations[questionIndex]) {
@@ -185,7 +191,8 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
       return;
     }
 
-    setIsGeneratingExplanation(true);
+    // Add this question index to the generating array
+    setGeneratingExplanationIndices(prev => [...prev, questionIndex]);
     
     try {
       const question = questions[questionIndex];
@@ -252,7 +259,8 @@ Keep your explanation clear, educational, and around 150-200 words.
       console.error("Error generating explanation:", error);
       setSelectedExplanation("Sorry, there was an error generating the explanation. Please try again later.");
     } finally {
-      setIsGeneratingExplanation(false);
+      // Remove this question index from the generating array
+      setGeneratingExplanationIndices(prev => prev.filter(idx => idx !== questionIndex));
     }
   };
 
@@ -490,10 +498,10 @@ Keep your explanation clear, educational, and around 150-200 words.
                       <button
                         onClick={() => generateExplanation(index)}
                         className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 flex items-center gap-2 text-sm"
-                        disabled={isGeneratingExplanation}
+                        disabled={isGeneratingExplanationForQuestion(index)}
                       >
                         <BookOpen className="h-4 w-4" />
-                        {isGeneratingExplanation && !generatedExplanations[index] ? "Generating..." : 
+                        {isGeneratingExplanationForQuestion(index) ? "Generating..." : 
                          generatedExplanations[index] ? "View Explanation" : (
                           <>
                             <Sparkles className="h-3 w-3" />
@@ -542,25 +550,18 @@ Keep your explanation clear, educational, and around 150-200 words.
               <span className="ml-auto text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded">Powered by AI</span>
             </h3>
             
-            {isGeneratingExplanation ? (
-              <div className="flex flex-col items-center justify-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-                <p className="mt-2 text-gray-600">Generating explanation...</p>
-              </div>
-            ) : (
-              <div className="flex gap-2 items-start">
-                <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
-                {isSpeechEnabled && (
-                  <button
-                    onClick={() => readText(selectedExplanation || "")}
-                    className="text-pink-500 hover:text-pink-600 flex-shrink-0 mt-1"
-                    title="Read explanation"
-                  >
-                    <Volume2 className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
-            )}
+            <div className="flex gap-2 items-start">
+              <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
+              {isSpeechEnabled && (
+                <button
+                  onClick={() => readText(selectedExplanation || "")}
+                  className="text-pink-500 hover:text-pink-600 flex-shrink-0 mt-1"
+                  title="Read explanation"
+                >
+                  <Volume2 className="h-5 w-5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
