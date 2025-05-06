@@ -170,17 +170,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2>
               <div className="flex items-center gap-3">
-                <button 
-                  onClick={toggleMasterSpeech}
-                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  title={isSpeechEnabled ? "Mute all speech" : "Unmute speech"}
-                >
-                  {isSpeechEnabled ? (
-                    <Volume2 className="h-5 w-5 text-pink-500" />
-                  ) : (
-                    <VolumeX className="h-5 w-5 text-gray-500" />
-                  )}
-                </button>
+                
                 <span className="text-sm text-gray-600">{formatTime(timeSpent)}</span>
               </div>
             </div>
@@ -416,7 +406,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                   Try Again
                 </button>
                 <a
-                  href="https://ncertquest.netlify.app/dashboard"
+                  href="https://ncertquest.netlify.app"
                   className="flex-1 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 flex items-center justify-center"
                 >
                   Dashboard
