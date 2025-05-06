@@ -18,9 +18,9 @@ interface AIConfig {
 
 // OpenRouter configuration with the provided API key
 const aiConfig: AIConfig = {
-  apiKey: "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",
+  apiKey: "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",
   endpoint: "https://openrouter.ai/api/v1/chat/completions",
-  model: "qwen/qwen3-32b:free",
+  model: "mistralai/mistral-small-24b-instruct-2501:free",
   referer: window.location.origin, 
   siteTitle: "NCERTquest" 
 };
