@@ -15,7 +15,10 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const [timeSpent, setTimeSpent] = useState(0);
   const [selectedExplanation, setSelectedExplanation] = useState<string | null>(null);
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
+  const [speakerIconsVisible, setSpeakerIconsVisible] = useState(true);
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastTapTime = useRef<number>(0);
 
   // Initialize speech synthesis
   useEffect(() => {
@@ -38,12 +41,32 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     }
   }, [submitted]);
 
-  // Auto-read current question when it changes
+  // Set up double-tap listener
   useEffect(() => {
-    if (isSpeechEnabled && !submitted) {
-      readCurrentQuestion();
+    const handleTap = (e: MouseEvent) => {
+      const now = new Date().getTime();
+      const timeSince = now - lastTapTime.current;
+      
+      if (timeSince < 300 && timeSince > 0) {
+        // Double tap detected
+        readCurrentQuestionAndOptions();
+        e.preventDefault();
+      }
+      
+      lastTapTime.current = now;
+    };
+    
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('click', handleTap);
     }
-  }, [currentQuestionIndex, isSpeechEnabled]);
+    
+    return () => {
+      if (container) {
+        container.removeEventListener('click', handleTap);
+      }
+    };
+  }, [currentQuestionIndex]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -68,6 +91,14 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     const currentQuestion = questions[currentQuestionIndex];
     if (!currentQuestion) return;
     
+    const textToRead = `Question ${currentQuestionIndex + 1}: ${currentQuestion.question}`;
+    readText(textToRead);
+  };
+  
+  const readCurrentQuestionAndOptions = () => {
+    const currentQuestion = questions[currentQuestionIndex];
+    if (!currentQuestion) return;
+    
     let textToRead = `Question ${currentQuestionIndex + 1}: ${currentQuestion.question}. `;
     textToRead += "Options: ";
     
@@ -78,15 +109,16 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     readText(textToRead);
   };
 
-  const toggleSpeech = () => {
+  const toggleMasterSpeech = () => {
     if (speechSynthesisRef.current) {
       if (isSpeechEnabled) {
         speechSynthesisRef.current.cancel(); // Stop any ongoing speech
-      } else {
-        readCurrentQuestion(); // Start reading if enabling
       }
     }
+    
+    // Toggle both the speech functionality and icon visibility
     setIsSpeechEnabled(!isSpeechEnabled);
+    setSpeakerIconsVisible(!speakerIconsVisible);
   };
 
   const handleAnswer = (answer: string) => {
@@ -131,7 +163,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const questionsAttempted = answers.filter((answer) => answer !== '').length;
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative" ref={containerRef}>
       <div className="bg-white rounded-lg p-8 w-full max-w-2xl z-10">
         {!submitted ? (
           <>
@@ -139,9 +171,9 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
               <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2>
               <div className="flex items-center gap-3">
                 <button 
-                  onClick={toggleSpeech}
+                  onClick={toggleMasterSpeech}
                   className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  title={isSpeechEnabled ? "Disable text-to-speech" : "Enable text-to-speech"}
+                  title={isSpeechEnabled ? "Mute all speech" : "Unmute speech"}
                 >
                   {isSpeechEnabled ? (
                     <Volume2 className="h-5 w-5 text-pink-500" />
@@ -166,26 +198,23 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                   Question {currentQuestionIndex + 1} of {questions.length}
                 </p>
                 <button 
-                  onClick={toggleSpeech}
-                  className="flex-shrink-0 p-2 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
-                  title={isSpeechEnabled ? "Disable text-to-speech" : "Enable text-to-speech"}
+                  onClick={readCurrentQuestionAndOptions}
+                  className={`flex-shrink-0 p-2 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors ${!isSpeechEnabled && 'opacity-50'}`}
+                  title="Read question and options"
+                  disabled={!isSpeechEnabled}
                 >
-                  {/* Speaker Toggle Icon */}
-                  {isSpeechEnabled ? (
-                    <Volume2 className="h-6 w-6 text-pink-500" />
-                  ) : (
-                    <VolumeX className="h-6 w-6 text-gray-500" />
-                  )}
+                  {/* Speaker Icon for reading question and options */}
+                  <Volume2 className="h-6 w-6 text-pink-500" />
                 </button>
               </div>
               <div className="flex gap-2 items-center mb-4">
                 <p className="font-medium text-gray-900 text-lg">
                   {questions[currentQuestionIndex].question}
                 </p>
-                {isSpeechEnabled && (
+                {speakerIconsVisible && isSpeechEnabled && (
                   <button
                     onClick={() => readText(questions[currentQuestionIndex].question)}
-                    className="ml-2 text-pink-500 hover:text-pink-600"
+                    className="ml-2 text-pink-500 hover:text-pink-600 transition-opacity"
                     title="Read question"
                   >
                     <Volume2 className="h-4 w-4" />
@@ -215,13 +244,13 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                         disabled={submitted}
                       />
                       <span className="text-gray-800">{option}</span>
-                      {isSpeechEnabled && (
+                      {speakerIconsVisible && isSpeechEnabled && (
                         <button
                           onClick={(e) => {
                             e.preventDefault();
                             readOption(option);
                           }}
-                          className="ml-auto text-pink-500 hover:text-pink-600"
+                          className="ml-auto text-pink-500 hover:text-pink-600 transition-opacity"
                           title="Read option"
                         >
                           <Volume2 className="h-4 w-4" />
@@ -322,14 +351,23 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                         <p className="font-medium text-gray-900">
                           {index + 1}. {question.question}
                         </p>
-                        {/* Speaker button in results section */}
-                        <button 
-                          onClick={() => readText(question.question)}
-                          className="flex-shrink-0 p-1 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
-                          title="Read question"
-                        >
-                          <Volume2 className="h-5 w-5 text-pink-500" />
-                        </button>
+                        {isSpeechEnabled && (
+                          <button 
+                            onClick={() => {
+                              let textToRead = question.question + ". ";
+                              textToRead += "Options: ";
+                              question.options.forEach((opt, i) => {
+                                textToRead += `Option ${i + 1}: ${opt}. `;
+                              });
+                              textToRead += `The correct answer is: ${question.correctAnswer}`;
+                              readText(textToRead);
+                            }}
+                            className="flex-shrink-0 p-1 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
+                            title="Read question and options"
+                          >
+                            <Volume2 className="h-5 w-5 text-pink-500" />
+                          </button>
+                        )}
                       </div>
 
                       <div className="space-y-3 mb-2">
@@ -400,11 +438,11 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
               <X className="w-5 h-5" />
             </button>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Explanation</h3>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex gap-2 items-center mb-4">
               <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
               {isSpeechEnabled && (
                 <button
-                  onClick={() => readText(selectedExplanation)}
+                  onClick={() => readText(selectedExplanation || "")}
                   className="text-pink-500 hover:text-pink-600 flex-shrink-0"
                   title="Read explanation"
                 >
