@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, RotateCcw, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { CheckCircle, XCircle, RotateCcw, X, Volume2, VolumeX } from 'lucide-react';
 import type { Question } from '../App';
 
 interface MCQTestProps {
@@ -14,7 +14,21 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
   const [selectedExplanation, setSelectedExplanation] = useState<string | null>(null);
+  const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
+  const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
 
+  // Initialize speech synthesis
+  useEffect(() => {
+    speechSynthesisRef.current = window.speechSynthesis;
+    return () => {
+      // Cancel any ongoing speech when component unmounts
+      if (speechSynthesisRef.current) {
+        speechSynthesisRef.current.cancel();
+      }
+    };
+  }, []);
+
+  // Timer for the quiz
   useEffect(() => {
     if (!submitted) {
       const timer = setInterval(() => {
@@ -24,10 +38,55 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     }
   }, [submitted]);
 
+  // Auto-read current question when it changes
+  useEffect(() => {
+    if (isSpeechEnabled && !submitted) {
+      readCurrentQuestion();
+    }
+  }, [currentQuestionIndex, isSpeechEnabled]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins} min ${secs} sec`;
+  };
+
+  const readText = (text: string) => {
+    if (!isSpeechEnabled || !speechSynthesisRef.current) return;
+    
+    // Cancel any ongoing speech
+    speechSynthesisRef.current.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    
+    speechSynthesisRef.current.speak(utterance);
+  };
+
+  const readCurrentQuestion = () => {
+    const currentQuestion = questions[currentQuestionIndex];
+    if (!currentQuestion) return;
+    
+    let textToRead = `Question ${currentQuestionIndex + 1}: ${currentQuestion.question}. `;
+    textToRead += "Options: ";
+    
+    currentQuestion.options.forEach((option, index) => {
+      textToRead += `Option ${index + 1}: ${option}. `;
+    });
+    
+    readText(textToRead);
+  };
+
+  const toggleSpeech = () => {
+    if (speechSynthesisRef.current) {
+      if (isSpeechEnabled) {
+        speechSynthesisRef.current.cancel(); // Stop any ongoing speech
+      } else {
+        readCurrentQuestion(); // Start reading if enabling
+      }
+    }
+    setIsSpeechEnabled(!isSpeechEnabled);
   };
 
   const handleAnswer = (answer: string) => {
@@ -57,6 +116,14 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
 
   const handleSubmit = () => {
     setSubmitted(true);
+    // Stop any ongoing speech
+    if (speechSynthesisRef.current) {
+      speechSynthesisRef.current.cancel();
+    }
+  };
+
+  const readOption = (option: string) => {
+    readText(option);
   };
 
   const score = calculateScore();
@@ -70,7 +137,20 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
           <>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2>
-              <span className="text-sm text-gray-600">{formatTime(timeSpent)}</span>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={toggleSpeech}
+                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                  title={isSpeechEnabled ? "Disable text-to-speech" : "Enable text-to-speech"}
+                >
+                  {isSpeechEnabled ? (
+                    <Volume2 className="h-5 w-5 text-pink-500" />
+                  ) : (
+                    <VolumeX className="h-5 w-5 text-gray-500" />
+                  )}
+                </button>
+                <span className="text-sm text-gray-600">{formatTime(timeSpent)}</span>
+              </div>
             </div>
 
             <div className="w-full h-2 mb-6">
@@ -81,12 +161,38 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
             </div>
 
             <div className="mb-6">
-              <p className="font-medium text-gray-900 mb-3">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </p>
-              <p className="font-medium text-gray-900 mb-4 text-lg">
-                {questions[currentQuestionIndex].question}
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-medium text-gray-900">
+                  Question {currentQuestionIndex + 1} of {questions.length}
+                </p>
+                <button 
+                  onClick={toggleSpeech}
+                  className="flex-shrink-0 p-2 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
+                  title={isSpeechEnabled ? "Disable text-to-speech" : "Enable text-to-speech"}
+                >
+                  {/* Speaker Toggle Icon */}
+                  {isSpeechEnabled ? (
+                    <Volume2 className="h-6 w-6 text-pink-500" />
+                  ) : (
+                    <VolumeX className="h-6 w-6 text-gray-500" />
+                  )}
+                </button>
+              </div>
+              <div className="flex gap-2 items-center mb-4">
+                <p className="font-medium text-gray-900 text-lg">
+                  {questions[currentQuestionIndex].question}
+                </p>
+                {isSpeechEnabled && (
+                  <button
+                    onClick={() => readText(questions[currentQuestionIndex].question)}
+                    className="ml-2 text-pink-500 hover:text-pink-600"
+                    title="Read question"
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              
               <div className="space-y-3">
                 {questions[currentQuestionIndex].options.map((option, optionIndex) => (
                   <label
@@ -96,6 +202,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                         ? 'bg-pink-100 border-pink-300'
                         : 'bg-white border-gray-200 hover:bg-gray-50'
                       }`}
+                    onMouseEnter={() => isSpeechEnabled && readOption(option)}
                   >
                     <div className="flex items-center gap-3">
                       <input
@@ -108,6 +215,18 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                         disabled={submitted}
                       />
                       <span className="text-gray-800">{option}</span>
+                      {isSpeechEnabled && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            readOption(option);
+                          }}
+                          className="ml-auto text-pink-500 hover:text-pink-600"
+                          title="Read option"
+                        >
+                          <Volume2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </label>
                 ))}
@@ -199,9 +318,19 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
                 <div className="mt-6 text-left">
                   {questions.map((question, index) => (
                     <div key={index} className="mb-6 pb-6 border-b last:border-none">
-                      <p className="font-medium text-gray-900 mb-3">
-                        {index + 1}. {question.question}
-                      </p>
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <p className="font-medium text-gray-900">
+                          {index + 1}. {question.question}
+                        </p>
+                        {/* Speaker button in results section */}
+                        <button 
+                          onClick={() => readText(question.question)}
+                          className="flex-shrink-0 p-1 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
+                          title="Read question"
+                        >
+                          <Volume2 className="h-5 w-5 text-pink-500" />
+                        </button>
+                      </div>
 
                       <div className="space-y-3 mb-2">
                         {question.options.map((option, optionIndex) => (
@@ -271,7 +400,18 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
               <X className="w-5 h-5" />
             </button>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Explanation</h3>
-            <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
+            <div className="flex items-center gap-2 mb-4">
+              <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
+              {isSpeechEnabled && (
+                <button
+                  onClick={() => readText(selectedExplanation)}
+                  className="text-pink-500 hover:text-pink-600 flex-shrink-0"
+                  title="Read explanation"
+                >
+                  <Volume2 className="h-5 w-5" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
