@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, XCircle, RotateCcw, X, Volume2, VolumeX, BookOpen, Sparkles } from 'lucide-react';
+import { CheckCircle, XCircle, RotateCcw, X, Volume2, VolumeX, BookOpen, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Question } from '../App';
 
 interface MCQTestProps {
@@ -16,7 +16,7 @@ interface AIConfig {
   siteTitle: string;
 }
 
-// OpenRouter configuration with the provided API key
+// OpenRouter configuration with the API key
 const aiConfig: AIConfig = {
   apiKey: "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",
   endpoint: "https://openrouter.ai/api/v1/chat/completions",
@@ -34,14 +34,13 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const [selectedExplanation, setSelectedExplanation] = useState<string | null>(null);
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
   const [speakerIconsVisible, setSpeakerIconsVisible] = useState(true);
-  // Change this to track loading state for each question
   const [generatingExplanationIndices, setGeneratingExplanationIndices] = useState<number[]>([]);
   const [generatedExplanations, setGeneratedExplanations] = useState<{[key: number]: string}>({});
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapTime = useRef<number>(0);
 
-  // Initialize speech synthesis
+  //  speech synthesis :
   useEffect(() => {
     speechSynthesisRef.current = window.speechSynthesis;
     return () => {
@@ -62,33 +61,6 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     }
   }, [submitted]);
 
-  // Set up double-tap listener
-  useEffect(() => {
-    const handleTap = (e: MouseEvent) => {
-      const now = new Date().getTime();
-      const timeSince = now - lastTapTime.current;
-      
-      if (timeSince < 300 && timeSince > 0) {
-        // Double tap detected
-        readCurrentQuestionAndOptions();
-        e.preventDefault();
-      }
-      
-      lastTapTime.current = now;
-    };
-    
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('click', handleTap);
-    }
-    
-    return () => {
-      if (container) {
-        container.removeEventListener('click', handleTap);
-      }
-    };
-  }, [currentQuestionIndex]);
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -98,7 +70,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const readText = (text: string) => {
     if (!isSpeechEnabled || !speechSynthesisRef.current) return;
     
-    // canel speech
+    // cancel speech
     speechSynthesisRef.current.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
@@ -137,7 +109,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
       }
     }
     
-    // Toggle  speech functionality and icon 
+    // Toggle speech and icon 
     setIsSpeechEnabled(!isSpeechEnabled);
     setSpeakerIconsVisible(!speakerIconsVisible);
   };
@@ -199,7 +171,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
       const userAnswer = answers[questionIndex];
       const isCorrect = question.correctAnswer === userAnswer;
       
-      // Create the prompt for the AI
+      //  the prompt for the AI
       const prompt = `
 You are an educational assistant helping students understand quiz questions.
 
@@ -276,7 +248,7 @@ Keep your explanation clear, educational, and around 150-200 words.
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2>
               <div className="flex items-center gap-3">
-                  <button 
+                <button 
                   onClick={toggleMasterSpeech}
                   className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
                   title={isSpeechEnabled ? "Mute all speech" : "Unmute speech"}
@@ -299,13 +271,32 @@ Keep your explanation clear, educational, and around 150-200 words.
               ></div>
             </div>
 
+            {/* Question navigation buttons at the top */}
+            <div className="flex justify-between items-center mb-4">
+              <button 
+                onClick={handlePrevious}
+                disabled={currentQuestionIndex === 0}
+                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                title="Previous question"
+              >
+                <ChevronLeft className="h-5 w-5 text-gray-700" />
+              </button>
+              
+              <p className="font-medium text-gray-900">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </p>
+              
+              <button 
+                onClick={handleNext}
+                disabled={currentQuestionIndex === questions.length - 1 || !answers[currentQuestionIndex]}
+                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                title="Next question"
+              >
+                <ChevronRight className="h-5 w-5 text-gray-700" />
+              </button>
+            </div>
+
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <p className="font-medium text-gray-900">
-                  Question {currentQuestionIndex + 1} of {questions.length}
-                </p>
-                
-              </div>
               <div className="flex gap-2 items-center mb-4">
                 <p className="font-medium text-gray-900 text-lg">
                   {questions[currentQuestionIndex].question}
@@ -365,17 +356,19 @@ Keep your explanation clear, educational, and around 150-200 words.
               <button
                 onClick={handlePrevious}
                 disabled={currentQuestionIndex === 0}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 flex items-center gap-1"
               >
+                <ChevronLeft className="h-4 w-4" />
                 Previous
               </button>
               {currentQuestionIndex < questions.length - 1 ? (
                 <button
                   onClick={handleNext}
                   disabled={!answers[currentQuestionIndex]}
-                  className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:opacity-50"
+                  className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:opacity-50 flex items-center gap-1"
                 >
                   Next
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               ) : (
                 <button
@@ -444,73 +437,133 @@ Keep your explanation clear, educational, and around 150-200 words.
 
               {showDetails && (
                 <div className="mt-6 text-left">
-                  {questions.map((question, index) => (
-                    <div key={index} className="mb-6 pb-6 border-b last:border-none">
-                      <div className="flex items-start justify-between gap-4 mb-3">
-                        <p className="font-medium text-gray-900">
-                          {index + 1}. {question.question}
-                        </p>
-                        <div className="flex gap-2">
-                          {isSpeechEnabled && (
-                            <button 
-                              onClick={() => {
-                                let textToRead = question.question + ". ";
-                                textToRead += "Options: ";
-                                question.options.forEach((opt, i) => {
-                                  textToRead += `Option ${i + 1}: ${opt}. `;
-                                });
-                                textToRead += `The correct answer is: ${question.correctAnswer}`;
-                                readText(textToRead);
-                              }}
-                              className="flex-shrink-0 p-1 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
-                              title="Read question and options"
-                            >
-                              <Volume2 className="h-5 w-5 text-pink-500" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                  {/* Question navigation buttons at the top */}
+                  <div className="flex justify-between items-center mb-4">
+                    <button 
+                      onClick={() => {
+                        if (currentQuestionIndex > 0) {
+                          setCurrentQuestionIndex(currentQuestionIndex - 1);
+                        }
+                      }}
+                      disabled={currentQuestionIndex === 0}
+                      className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                      title="Previous question"
+                    >
+                      <ChevronLeft className="h-5 w-5 text-gray-700" />
+                    </button>
+                    
+                    <p className="font-medium text-gray-900">
+                      Question {currentQuestionIndex + 1} of {questions.length}
+                    </p>
+                    
+                    <button 
+                      onClick={() => {
+                        if (currentQuestionIndex < questions.length - 1) {
+                          setCurrentQuestionIndex(currentQuestionIndex + 1);
+                        }
+                      }}
+                      disabled={currentQuestionIndex === questions.length - 1}
+                      className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
+                      title="Next question"
+                    >
+                      <ChevronRight className="h-5 w-5 text-gray-700" />
+                    </button>
+                  </div>
 
-                      <div className="space-y-3 mb-4">
-                        {question.options.map((option, optionIndex) => (
-                          <div
-                            key={optionIndex}
-                            className={`block p-4 rounded-lg
-                              ${question.correctAnswer === option
-                                ? 'bg-green-50'
-                                : answers[index] === option
-                                  ? 'bg-red-50'
-                                  : 'bg-white'
-                              }`}
+                  <div key={currentQuestionIndex} className="mb-6 pb-6 border-b last:border-none">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <p className="font-medium text-gray-900">
+                        {currentQuestionIndex + 1}. {questions[currentQuestionIndex].question}
+                      </p>
+                      <div className="flex gap-2">
+                        {isSpeechEnabled && (
+                          <button 
+                            onClick={() => {
+                              let textToRead = questions[currentQuestionIndex].question + ". ";
+                              textToRead += "Options: ";
+                              questions[currentQuestionIndex].options.forEach((opt, i) => {
+                                textToRead += `Option ${i + 1}: ${opt}. `;
+                              });
+                              textToRead += `The correct answer is: ${questions[currentQuestionIndex].correctAnswer}`;
+                              readText(textToRead);
+                            }}
+                            className="flex-shrink-0 p-1 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
+                            title="Read question and options"
                           >
-                            <div className="flex items-center gap-3">
-                              <span className="text-gray-800">{option}</span>
-                              {question.correctAnswer === option ? (
-                                <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />
-                              ) : answers[index] === option ? (
-                                <XCircle className="h-5 w-5 text-red-500 ml-auto" />
-                              ) : null}
-                            </div>
-                          </div>
-                        ))}
+                            <Volume2 className="h-5 w-5 text-pink-500" />
+                          </button>
+                        )}
                       </div>
-
-                      <button
-                        onClick={() => generateExplanation(index)}
-                        className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 flex items-center gap-2 text-sm"
-                        disabled={isGeneratingExplanationForQuestion(index)}
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        {isGeneratingExplanationForQuestion(index) ? "Generating..." : 
-                         generatedExplanations[index] ? "View Explanation" : (
-                          <>
-                            <Sparkles className="h-3 w-3" />
-                            Generate AI Explanation
-                          </>
-                         )}
-                      </button>
                     </div>
-                  ))}
+
+                    <div className="space-y-3 mb-4">
+                      {questions[currentQuestionIndex].options.map((option, optionIndex) => (
+                        <div
+                          key={optionIndex}
+                          className={`block p-4 rounded-lg
+                            ${questions[currentQuestionIndex].correctAnswer === option
+                              ? 'bg-green-50'
+                              : answers[currentQuestionIndex] === option
+                                ? 'bg-red-50'
+                                : 'bg-white'
+                            }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-gray-800">{option}</span>
+                            {questions[currentQuestionIndex].correctAnswer === option ? (
+                              <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />
+                            ) : answers[currentQuestionIndex] === option ? (
+                              <XCircle className="h-5 w-5 text-red-500 ml-auto" />
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => generateExplanation(currentQuestionIndex)}
+                      className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 flex items-center gap-2 text-sm"
+                      disabled={isGeneratingExplanationForQuestion(currentQuestionIndex)}
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      {isGeneratingExplanationForQuestion(currentQuestionIndex) ? "Generating..." : 
+                       generatedExplanations[currentQuestionIndex] ? "View Explanation" : (
+                        <>
+                          <Sparkles className="h-3 w-3" />
+                          Generate AI Explanation
+                        </>
+                       )}
+                    </button>
+                  </div>
+
+                  {/* Question navigation buttons at the bottom */}
+                  <div className="flex justify-between items-center mt-4">
+                    <button
+                      onClick={() => {
+                        if (currentQuestionIndex > 0) {
+                          setCurrentQuestionIndex(currentQuestionIndex - 1);
+                        }
+                      }}
+                      disabled={currentQuestionIndex === 0}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        if (currentQuestionIndex < questions.length - 1) {
+                          setCurrentQuestionIndex(currentQuestionIndex + 1);
+                        }
+                      }}
+                      disabled={currentQuestionIndex === questions.length - 1}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 flex items-center gap-1"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -534,33 +587,49 @@ Keep your explanation clear, educational, and around 150-200 words.
         )}
       </div>
 
-      {/* EXPLANATION MODAL */}
+      {/* EXPLANATION MODAL - Now with scrolling */}
       {selectedExplanation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full relative shadow-xl">
-            <button
-              onClick={() => setSelectedExplanation(null)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-indigo-500" />
-              AI-Generated Explanation
-              <span className="ml-auto text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded">Powered by AI</span>
-            </h3>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[80vh] relative shadow-xl flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-indigo-500" />
+                AI-Generated Explanation
+              </h3>
+              <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded">Powered by AI</span>
+              <button
+                onClick={() => setSelectedExplanation(null)}
+                className="text-gray-500 hover:text-gray-700"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             
-            <div className="flex gap-2 items-start">
-              <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
-              {isSpeechEnabled && (
-                <button
-                  onClick={() => readText(selectedExplanation || "")}
-                  className="text-pink-500 hover:text-pink-600 flex-shrink-0 mt-1"
-                  title="Read explanation"
-                >
-                  <Volume2 className="h-5 w-5" />
-                </button>
-              )}
+            {/* Scrollable explanation content */}
+            <div className="overflow-y-auto flex-grow pr-2" style={{ maxHeight: "60vh" }}>
+              <div className="flex gap-2 items-start">
+                <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
+                {isSpeechEnabled && (
+                  <button
+                    onClick={() => readText(selectedExplanation || "")}
+                    className="text-pink-500 hover:text-pink-600 flex-shrink-0 mt-1"
+                    title="Read explanation"
+                  >
+                    <Volume2 className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Close button at the bottom */}
+            <div className="mt-4 pt-2 border-t border-gray-200">
+              <button 
+                onClick={() => setSelectedExplanation(null)}
+                className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
