@@ -16,7 +16,7 @@ interface AIConfig {
   siteTitle: string;
 }
 
-// OpenRouter configuration with the API key
+// OpenRouter configuration with API key
 const aiConfig: AIConfig = {
   apiKey: "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",
   endpoint: "https://openrouter.ai/api/v1/chat/completions",
@@ -44,7 +44,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   useEffect(() => {
     speechSynthesisRef.current = window.speechSynthesis;
     return () => {
-      // Cancel any ongoing speech when component unmounts
+      
       if (speechSynthesisRef.current) {
         speechSynthesisRef.current.cancel();
       }
@@ -151,19 +151,17 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     readText(option);
   };
 
-  // Check if a specific question is currently generating an explanation
   const isGeneratingExplanationForQuestion = (questionIndex: number) => {
     return generatingExplanationIndices.includes(questionIndex);
   };
 
-  // generate explanation using OpenRouter AI API
+  // generate explanation
   const generateExplanation = async (questionIndex: number) => {
     if (generatedExplanations[questionIndex]) {
       setSelectedExplanation(generatedExplanations[questionIndex]);
       return;
     }
 
-    // Add this question index to the generating array
     setGeneratingExplanationIndices(prev => [...prev, questionIndex]);
     
     try {
@@ -171,7 +169,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
       const userAnswer = answers[questionIndex];
       const isCorrect = question.correctAnswer === userAnswer;
       
-      //  the prompt for the AI
+      //   prompt for  AI
       const prompt = `
 You are an educational assistant helping students understand quiz questions.
 
@@ -189,7 +187,7 @@ Include relevant concepts, examples, and connections to NCERT material where pos
 Keep your explanation clear, educational, and around 150-200 words.
 `;
       
-      // Make the API call to OpenRouter
+      //  API call to OpenRouter
       const response = await fetch(aiConfig.endpoint, {
         method: "POST",
         headers: {
@@ -231,7 +229,7 @@ Keep your explanation clear, educational, and around 150-200 words.
       console.error("Error generating explanation:", error);
       setSelectedExplanation("Sorry, there was an error generating the explanation. Please try again later.");
     } finally {
-      // Remove this question index from the generating array
+      
       setGeneratingExplanationIndices(prev => prev.filter(idx => idx !== questionIndex));
     }
   };
