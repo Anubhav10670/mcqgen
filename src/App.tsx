@@ -20,7 +20,38 @@ function App() {
     setLoading(true);
     setError(null);
     
-const prompt = `I want you to generate ${numQuestions} multiple-choice quiz questions based on the following text. The output should be strictly in valid JSON format, containing only the questions, options, and correct answers. The JSON should be correct with no syntax errors and should avoid using backticks or any other formatting characters. Do not include any additional remarks, reasoning, or explanations—only the JSON output (the questions should be valuable and good with meaning not like , in the passage , in the page , explain the question well you are supposed to clear the concepts of student via mcqs make the questions mid difficult avoid using questions whuich refers or asks for activity number). Format the response as a JSON array where each question object follows this structure: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}. Ensure the JSON is valid and contains meaningful questions which clears main topics of students and avoid activities for generation . Do not make any errors in the JSON file, and format it carefully , the output should be in text format dont box it. Text: ${text}`;
+const prompt = `You are an educational expert and assessment designer with a deep understanding of pedagogy, concept-based learning, and effective question formulation. Your task is to generate exactly ${numQuestions} multiple-choice quiz questions based on the provided instructional content.
+
+Your output must meet the following criteria:
+
+Purpose and Quality:
+
+Each question should test meaningful understanding of the key concepts in the text—not just rote memorization.
+
+Questions must be mid-level in difficulty and designed to help students grasp and internalize core ideas.
+
+Avoid vague or filler phrasing such as "in the passage", "on the page", or references to activity numbers.
+
+Do not create questions that rely on context outside the provided text.
+
+Ensure questions are clear, well-structured, and pedagogically sound.
+
+Formatting Requirements:
+
+Output must be a valid JSON array of question objects.
+
+
+JSON must be syntactically perfect—no missing commas, incorrect brackets, or formatting errors.
+
+Do not include any markdown (e.g., backticks, code blocks) or additional explanation—only output the raw JSON in plain text format.
+
+Important Constraints:
+
+Do not include any introductory text, commentary, or meta remarks.
+
+Do not reference activities, figures, or sections by number or label.
+
+Ensure that each question contributes to conceptual clarity and reinforces important learning outcomes. Text: ${text}`;
 
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
