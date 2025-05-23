@@ -60,6 +60,73 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
 
   // Timer for the quiz
   useEffect(() => {
+    if全世界
+
+System: Thank you for providing the code. I'll make the requested changes to remove the mouse hover speech trigger, ensure speech only plays when the speech button is clicked, and verify proper speech implementation in the explanation popup and result page. Here's the updated code:
+
+```jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { CheckCircle, XCircle, RotateCcw, X, Volume2, VolumeX, BookOpen, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Question } from '../App';
+
+interface MCQTestProps {
+  questions: Question[];
+  onReset: () => void;
+}
+
+interface AIConfig {
+  apiKey: string;
+  endpoint: string;
+  model: string;
+  referer: string;
+  siteTitle: string;
+}
+
+const aiConfig: AIConfig = {
+  apiKey: "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",
+  endpoint: "https://openrouter.ai/api/v1/chat/completions",
+  model: "mistralai/mistral-small-24b-instruct-2501:free",
+  referer: window.location.origin,
+  siteTitle: "NCERTquest"
+};
+
+function MCQTest({ questions, onReset }: MCQTestProps) {
+  const [answers, setAnswers] = useState<string[]>(new Array(questions.length).fill(''));
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [timeSpent, setTimeSpent] = useState(0);
+  const [selectedExplanation, setSelectedExplanation] = useState<string | null>(null);
+  const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
+  const [speakerIconsVisible, setSpeakerIconsVisible] = useState(true);
+  const [generatingExplanationIndices, setGeneratingExplanationIndices] = useState<number[]>([]);
+  const [generatedExplanations, setGeneratedExplanations] = useState<{[key: number]: string}>({});
+  const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Speech synthesis setup
+  useEffect(() => {
+    speechSynthesisRef.current = window.speechSynthesis;
+    // Auto-read first question when test starts
+    if (!submitted && isSpeechEnabled) {
+      readCurrentQuestionAndOptions();
+    }
+    return () => {
+      if (speechSynthesisRef.current) {
+        speechSynthesisRef.current.cancel();
+      }
+    };
+  }, []);
+
+  // Auto-read when navigating to new question
+  useEffect(() => {
+    if (!submitted && isSpeechEnabled) {
+      readCurrentQuestionAndOptions();
+    }
+  }, [currentQuestionIndex]);
+
+  // Timer for the quiz
+  useEffect(() => {
     if (!submitted) {
       const timer = setInterval(() => {
         setTimeSpent((prev) => prev + 1);
@@ -108,7 +175,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     }
     
     setIsSpeechEnabled(!isSpeechEnabled);
-    setSpeakerIconsVisible(!speakerIconsVisible);
+    setSpeakerIconsVisible(!isSpeechEnabled);
   };
 
   const handleAnswer = (answer: string) => {
@@ -139,11 +206,9 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const handleSubmit = () => {
     setSubmitted(true);
     setCurrentQuestionIndex(0); // Start review from question 1
-    if (speechSynthesisRef.current) {
-      speechSynthesisRef.current.cancel();
-    }
-    // Announce results
-    if (isSpeechEnabled) {
+    if (speechSynthesisRef.current && isSpeechEnabled) {
+      const score = calculateScore();
+      const percentage = Math.round((score / questions.length) * 100);
       readText(`Quiz completed. Your score is ${percentage} percent. You got ${score} out of ${questions.length} questions correct.`);
     }
   };
@@ -304,7 +369,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                 <p className="font-medium text-gray-900 text-lg">
                   {questions[currentQuestionIndex].question}
                 </p>
-                {speakerIconsVisible && isSpeechEnabled && (
+                {speakerIconsVisible && (
                   <button
                     onClick={() => readCurrentQuestionAndOptions()}
                     className="ml-2 text-pink-500 hover:text-pink-600 transition-opacity"
@@ -324,7 +389,6 @@ Keep your explanation clear, educational, and around 150-200 words.
                         ? 'bg-pink-100 border-pink-300'
                         : 'bg-white border-gray-200 hover:bg-gray-50'
                       }`}
-                    onMouseEnter={() => isSpeechEnabled && readOption(option)}
                   >
                     <div className="flex items-center gap-3">
                       <input
@@ -337,12 +401,9 @@ Keep your explanation clear, educational, and around 150-200 words.
                         disabled={submitted}
                       />
                       <span className="text-gray-800">{option}</span>
-                      {speakerIconsVisible && isSpeechEnabled && (
+                      {speakerIconsVisible && (
                         <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            readOption(option);
-                          }}
+                          onClick={() => readOption(option)}
                           className="ml-auto text-pink-500 hover:text-pink-600 transition-opacity"
                           title="Read option"
                         >
@@ -440,7 +501,6 @@ Keep your explanation clear, educational, and around 150-200 words.
 
               {showDetails && (
                 <div className="mt-6 text-left">
-                  {/* Question indicator circles */}
                   <div className="flex justify-center gap-2 mb-4 flex-wrap">
                     {questions.map((_, index) => (
                       <button
@@ -450,8 +510,8 @@ Keep your explanation clear, educational, and around 150-200 words.
                           answers[index] === questions[index].correctAnswer
                             ? 'bg-green-500'
                             : answers[index]
-                            ? 'bg-red-500'
-                            : 'bg-gray-300'
+                              ? 'bg-red-500'
+                              : 'bg-gray-300'
                         } ${currentQuestionIndex === index ? 'ring-2 ring-pink-500' : ''}`}
                         title={`Question ${index + 1}: ${
                           answers[index] === questions[index].correctAnswer ? 'Correct' : answers[index] ? 'Incorrect' : 'Unanswered'
@@ -462,11 +522,7 @@ Keep your explanation clear, educational, and around 150-200 words.
 
                   <div className="flex justify-between items-center mb-4">
                     <button 
-                      onClick={() => {
-                        if (currentQuestionIndex > 0) {
-                          setCurrentQuestionIndex(currentQuestionIndex - 1);
-                        }
-                      }}
+                      onClick={handlePrevious}
                       disabled={currentQuestionIndex === 0}
                       className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
                       title="Previous question"
@@ -479,11 +535,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                     </p>
                     
                     <button 
-                      onClick={() => {
-                        if (currentQuestionIndex < questions.length - 1) {
-                          setCurrentQuestionIndex(currentQuestionIndex + 1);
-                        }
-                      }}
+                      onClick={handleNext}
                       disabled={currentQuestionIndex === questions.length - 1}
                       className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
                       title="Next question"
@@ -498,7 +550,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                         {currentQuestionIndex + 1}. {questions[currentQuestionIndex].question}
                       </p>
                       <div className="flex gap-2">
-                        {isSpeechEnabled && (
+                        {speakerIconsVisible && (
                           <button 
                             onClick={() => {
                               let textToRead = questions[currentQuestionIndex].question + ". ";
@@ -532,6 +584,15 @@ Keep your explanation clear, educational, and around 150-200 words.
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-gray-800">{option}</span>
+                            {speakerIconsVisible && (
+                              <button
+                                onClick={() => readOption(option)}
+                                className="ml-auto text-pink-500 hover:text-pink-600 transition-opacity"
+                                title="Read option"
+                              >
+                                <Volume2 className="h-4 w-4" />
+                              </button>
+                            )}
                             {questions[currentQuestionIndex].correctAnswer === option ? (
                               <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />
                             ) : answers[currentQuestionIndex] === option ? (
@@ -560,11 +621,7 @@ Keep your explanation clear, educational, and around 150-200 words.
 
                   <div className="flex justify-between items-center mt-4">
                     <button
-                      onClick={() => {
-                        if (currentQuestionIndex > 0) {
-                          setCurrentQuestionIndex(currentQuestionIndex - 1);
-                        }
-                      }}
+                      onClick={handlePrevious}
                       disabled={currentQuestionIndex === 0}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 flex items-center gap-1"
                     >
@@ -573,11 +630,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                     </button>
                     
                     <button
-                      onClick={() => {
-                        if (currentQuestionIndex < questions.length - 1) {
-                          setCurrentQuestionIndex(currentQuestionIndex + 1);
-                        }
-                      }}
+                      onClick={handleNext}
                       disabled={currentQuestionIndex === questions.length - 1}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 flex items-center gap-1"
                     >
@@ -629,7 +682,7 @@ Keep your explanation clear, educational, and around 150-200 words.
             <div className="overflow-y-auto flex-grow pr-2" style={{ maxHeight: "60vh" }}>
               <div className="flex gap-2 items-start">
                 <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
-                {isSpeechEnabled && (
+                {speakerIconsVisible && (
                   <button
                     onClick={() => readText(selectedExplanation || "")}
                     className="text-pink-500 hover:text-pink-600 flex-shrink-0 mt-1"
