@@ -51,7 +51,10 @@ Do not include any introductory text, commentary, or meta remarks.
 
 Do not reference activities, figures, or sections by number or label.
 
-Ensure that each question contributes to conceptual clarity and reinforces important learning outcomes. Text: ${text}`;
+Ensure that each question contributes to conceptual clarity and reinforces important learning outcomes.
+
+You are supposed to provide the asnswer of the questions and that too in json format IT IS VERY IMPORTANT
+Text: ${text}`;
 
     try {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
