@@ -40,16 +40,27 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapTime = useRef<number>(0);
 
-  //  speech synthesis :
+  // Initialize speech synthesis
   useEffect(() => {
     speechSynthesisRef.current = window.speechSynthesis;
     return () => {
-      
       if (speechSynthesisRef.current) {
         speechSynthesisRef.current.cancel();
       }
     };
   }, []);
+
+  // Auto-read question when component loads initially or when navigating to next question
+  useEffect(() => {
+    if (!submitted && isSpeechEnabled) {
+      // Short timeout to ensure UI is rendered before speech starts
+      const timeoutId = setTimeout(() => {
+        readCurrentQuestionAndOptions();
+      }, 300);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentQuestionIndex, submitted, isSpeechEnabled]);
 
   // Timer for the quiz
   useEffect(() => {
@@ -70,7 +81,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const readText = (text: string) => {
     if (!isSpeechEnabled || !speechSynthesisRef.current) return;
     
-    // cancel speech
+    // Cancel any ongoing speech
     speechSynthesisRef.current.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
@@ -109,7 +120,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
       }
     }
     
-    // Toggle speech and icon 
+    // Toggle speech and icon visibility
     setIsSpeechEnabled(!isSpeechEnabled);
     setSpeakerIconsVisible(!speakerIconsVisible);
   };
@@ -141,9 +152,19 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
 
   const handleSubmit = () => {
     setSubmitted(true);
+    setCurrentQuestionIndex(0); // Reset to question 1 when showing results
 
     if (speechSynthesisRef.current) {
       speechSynthesisRef.current.cancel();
+    }
+    
+    // Auto-read the result summary if speech is enabled
+    if (isSpeechEnabled) {
+      const score = calculateScore();
+      const percentage = Math.round((score / questions.length) * 100);
+      setTimeout(() => {
+        readText(`Quiz completed. Your score is ${score} out of ${questions.length}, which is ${percentage} percent.`);
+      }, 500);
     }
   };
 
@@ -155,10 +176,32 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     return generatingExplanationIndices.includes(questionIndex);
   };
 
-  // generate explanation
+  // Navigate directly to a specific question in review mode
+  const navigateToQuestion = (index: number) => {
+    setCurrentQuestionIndex(index);
+    
+    // Auto-read the selected question in review mode if speech is enabled
+    if (isSpeechEnabled && submitted) {
+      setTimeout(() => {
+        let textToRead = `Question ${index + 1}: ${questions[index].question}. `;
+        textToRead += `The correct answer is ${questions[index].correctAnswer}. `;
+        textToRead += `You answered ${answers[index] || "nothing"}.`;
+        readText(textToRead);
+      }, 300);
+    }
+  };
+
+  // Generate explanation using AI
   const generateExplanation = async (questionIndex: number) => {
     if (generatedExplanations[questionIndex]) {
       setSelectedExplanation(generatedExplanations[questionIndex]);
+      
+      // Auto-read the explanation if speech is enabled
+      if (isSpeechEnabled) {
+        setTimeout(() => {
+          readText(generatedExplanations[questionIndex]);
+        }, 300);
+      }
       return;
     }
 
@@ -169,7 +212,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
       const userAnswer = answers[questionIndex];
       const isCorrect = question.correctAnswer === userAnswer;
       
-      //   prompt for  AI
+      // Prompt for AI
       const prompt = `
 You are an educational assistant helping students understand quiz questions.
 
@@ -187,7 +230,7 @@ Include relevant concepts, examples, and connections to NCERT material where pos
 Keep your explanation clear, educational, and around 150-200 words.
 `;
       
-      //  API call to OpenRouter
+      // API call to OpenRouter
       const response = await fetch(aiConfig.endpoint, {
         method: "POST",
         headers: {
@@ -225,11 +268,21 @@ Keep your explanation clear, educational, and around 150-200 words.
       
       setGeneratedExplanations(newExplanations);
       setSelectedExplanation(generatedExplanation);
+      
+      // Auto-read the generated explanation if speech is enabled
+      if (isSpeechEnabled) {
+        setTimeout(() => {
+          readText(generatedExplanation);
+        }, 300);
+      }
     } catch (error) {
       console.error("Error generating explanation:", error);
       setSelectedExplanation("Sorry, there was an error generating the explanation. Please try again later.");
-    } finally {
       
+      if (isSpeechEnabled) {
+        readText("Sorry, there was an error generating the explanation. Please try again later.");
+      }
+    } finally {
       setGeneratingExplanationIndices(prev => prev.filter(idx => idx !== questionIndex));
     }
   };
@@ -237,6 +290,11 @@ Keep your explanation clear, educational, and around 150-200 words.
   const score = calculateScore();
   const percentage = Math.round((score / questions.length) * 100);
   const questionsAttempted = answers.filter((answer) => answer !== '').length;
+
+  // Helper function to determine if an answer is correct
+  const isAnswerCorrect = (questionIndex: number) => {
+    return questions[questionIndex].correctAnswer === answers[questionIndex];
+  };
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4 relative" ref={containerRef}>
@@ -426,6 +484,35 @@ Keep your explanation clear, educational, and around 150-200 words.
                 </div>
               </div>
 
+              {/* Question result indicator circles */}
+              <div className="flex flex-wrap justify-center gap-2 mb-4">
+                {questions.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => navigateToQuestion(index)}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors cursor-pointer
+                      ${currentQuestionIndex === index ? 'ring-2 ring-blue-400' : ''}
+                      ${!answers[index] ? 'bg-gray-200 text-gray-700' : 
+                         isAnswerCorrect(index) ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}
+                    title={`Question ${index + 1}: ${isAnswerCorrect(index) ? 'Correct' : 'Incorrect'}`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+              
+              {/* Color legend */}
+              <div className="flex justify-center gap-4 mb-6">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-xs text-gray-600">Correct</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span className="text-xs text-gray-600">Incorrect</span>
+                </div>
+              </div>
+
               <button
                 onClick={() => setShowDetails(!showDetails)}
                 className="w-full py-2 mb-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
@@ -438,11 +525,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                   {/* Question navigation buttons at the top */}
                   <div className="flex justify-between items-center mb-4">
                     <button 
-                      onClick={() => {
-                        if (currentQuestionIndex > 0) {
-                          setCurrentQuestionIndex(currentQuestionIndex - 1);
-                        }
-                      }}
+                      onClick={() => navigateToQuestion(currentQuestionIndex - 1)}
                       disabled={currentQuestionIndex === 0}
                       className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
                       title="Previous question"
@@ -455,11 +538,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                     </p>
                     
                     <button 
-                      onClick={() => {
-                        if (currentQuestionIndex < questions.length - 1) {
-                          setCurrentQuestionIndex(currentQuestionIndex + 1);
-                        }
-                      }}
+                      onClick={() => navigateToQuestion(currentQuestionIndex + 1)}
                       disabled={currentQuestionIndex === questions.length - 1}
                       className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
                       title="Next question"
@@ -537,11 +616,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                   {/* Question navigation buttons at the bottom */}
                   <div className="flex justify-between items-center mt-4">
                     <button
-                      onClick={() => {
-                        if (currentQuestionIndex > 0) {
-                          setCurrentQuestionIndex(currentQuestionIndex - 1);
-                        }
-                      }}
+                      onClick={() => navigateToQuestion(currentQuestionIndex - 1)}
                       disabled={currentQuestionIndex === 0}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 flex items-center gap-1"
                     >
@@ -550,11 +625,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                     </button>
                     
                     <button
-                      onClick={() => {
-                        if (currentQuestionIndex < questions.length - 1) {
-                          setCurrentQuestionIndex(currentQuestionIndex + 1);
-                        }
-                      }}
+                      onClick={() => navigateToQuestion(currentQuestionIndex + 1)}
                       disabled={currentQuestionIndex === questions.length - 1}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 flex items-center gap-1"
                     >
@@ -585,7 +656,7 @@ Keep your explanation clear, educational, and around 150-200 words.
         )}
       </div>
 
-      {/* EXPLANATION MODAL - Now with scrolling */}
+      {/* EXPLANATION MODAL - Now with enhanced speech capabilities */}
       {selectedExplanation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[80vh] relative shadow-xl flex flex-col">
@@ -596,7 +667,12 @@ Keep your explanation clear, educational, and around 150-200 words.
               </h3>
               <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-1 rounded">Powered by AI</span>
               <button
-                onClick={() => setSelectedExplanation(null)}
+                onClick={() => {
+                  if (speechSynthesisRef.current) {
+                    speechSynthesisRef.current.cancel(); // Stop any ongoing speech when closing
+                  }
+                  setSelectedExplanation(null);
+                }}
                 className="text-gray-500 hover:text-gray-700"
                 aria-label="Close"
               >
@@ -620,20 +696,24 @@ Keep your explanation clear, educational, and around 150-200 words.
               </div>
             </div>
 
-            {/* Close button at the bottom */}
-            <div className="mt-4 pt-2 border-t border-gray-200">
-              <button 
-                onClick={() => setSelectedExplanation(null)}
-                className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default MCQTest;
+            {/* Speech control buttons */}
+            <div className="mt-4 flex justify-between items-center border-t border-gray-200 pt-2">
+              {isSpeechEnabled && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (speechSynthesisRef.current) {
+                        speechSynthesisRef.current.cancel();
+                      }
+                    }}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm flex items-center gap-1"
+                    title="Stop speech"
+                  >
+                    <VolumeX className="h-4 w-4" />
+                    Stop
+                  </button>
+                  <button
+                    onClick={() => readText(selectedExplanation || "")}
+                    className="px-3 py-1 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 text-sm flex items-center gap-1"
+                    title="Read explanation"
+                  
