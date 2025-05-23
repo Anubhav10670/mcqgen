@@ -33,16 +33,19 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
   const [speakerIconsVisible, setSpeakerIconsVisible] = useState(true);
   const [generatingExplanationIndices, setGeneratingExplanationIndices] = useState<number[]>([]);
-  const [generatedExplanations, setGeneratedExplanations] = useState<{[key: number]: string}>({});
+  const [generatedExplanations, setGeneratedExplanations] = useState<{ [key: number]: string }>({});
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Speech synthesis setup
   useEffect(() => {
-    speechSynthesisRef.current = window.speechSynthesis;
-    // Auto-read first question when test starts
-    if (!submitted && isSpeechEnabled) {
-      readCurrentQuestionAndOptions();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      speechSynthesisRef.current = window.speechSynthesis;
+      // Optional: Auto-read first question when test starts
+      // Comment out the following if you don't want auto-read on start
+      if (!submitted && isSpeechEnabled && questions.length > 0) {
+        readCurrentQuestionAndOptions();
+      }
     }
     return () => {
       if (speechSynthesisRef.current) {
@@ -51,76 +54,10 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     };
   }, []);
 
-  // Auto-read when navigating to new question
+  // Optional: Auto-read when navigating to new question
+  // Comment out the following useEffect if you don't want auto-read on navigation
   useEffect(() => {
-    if (!submitted && isSpeechEnabled) {
-      readCurrentQuestionAndOptions();
-    }
-  }, [currentQuestionIndex]);
-
-  // Timer for the quiz
-  useEffect(() => {
-    if全世界
-
-System: Thank you for providing the code. I'll make the requested changes to remove the mouse hover speech trigger, ensure speech only plays when the speech button is clicked, and verify proper speech implementation in the explanation popup and result page. Here's the updated code:
-
-```jsx
-import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, XCircle, RotateCcw, X, Volume2, VolumeX, BookOpen, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Question } from '../App';
-
-interface MCQTestProps {
-  questions: Question[];
-  onReset: () => void;
-}
-
-interface AIConfig {
-  apiKey: string;
-  endpoint: string;
-  model: string;
-  referer: string;
-  siteTitle: string;
-}
-
-const aiConfig: AIConfig = {
-  apiKey: "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",
-  endpoint: "https://openrouter.ai/api/v1/chat/completions",
-  model: "mistralai/mistral-small-24b-instruct-2501:free",
-  referer: window.location.origin,
-  siteTitle: "NCERTquest"
-};
-
-function MCQTest({ questions, onReset }: MCQTestProps) {
-  const [answers, setAnswers] = useState<string[]>(new Array(questions.length).fill(''));
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [submitted, setSubmitted] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-  const [timeSpent, setTimeSpent] = useState(0);
-  const [selectedExplanation, setSelectedExplanation] = useState<string | null>(null);
-  const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
-  const [speakerIconsVisible, setSpeakerIconsVisible] = useState(true);
-  const [generatingExplanationIndices, setGeneratingExplanationIndices] = useState<number[]>([]);
-  const [generatedExplanations, setGeneratedExplanations] = useState<{[key: number]: string}>({});
-  const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Speech synthesis setup
-  useEffect(() => {
-    speechSynthesisRef.current = window.speechSynthesis;
-    // Auto-read first question when test starts
-    if (!submitted && isSpeechEnabled) {
-      readCurrentQuestionAndOptions();
-    }
-    return () => {
-      if (speechSynthesisRef.current) {
-        speechSynthesisRef.current.cancel();
-      }
-    };
-  }, []);
-
-  // Auto-read when navigating to new question
-  useEffect(() => {
-    if (!submitted && isSpeechEnabled) {
+    if (!submitted && isSpeechEnabled && questions.length > 0) {
       readCurrentQuestionAndOptions();
     }
   }, [currentQuestionIndex]);
@@ -142,38 +79,31 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   };
 
   const readText = (text: string) => {
-    if (!isSpeechEnabled || !speechSynthesisRef.current) return;
-    
+    if (!isSpeechEnabled || !speechSynthesisRef.current || !text) return;
+
     speechSynthesisRef.current.cancel();
-    
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1;
     utterance.pitch = 1;
-    
     speechSynthesisRef.current.speak(utterance);
   };
 
   const readCurrentQuestionAndOptions = () => {
     const currentQuestion = questions[currentQuestionIndex];
     if (!currentQuestion) return;
-    
+
     let textToRead = `Question ${currentQuestionIndex + 1}: ${currentQuestion.question}. `;
     textToRead += "Options: ";
-    
     currentQuestion.options.forEach((option, index) => {
       textToRead += `Option ${index + 1}: ${option}. `;
     });
-    
     readText(textToRead);
   };
 
   const toggleMasterSpeech = () => {
-    if (speechSynthesisRef.current) {
-      if (isSpeechEnabled) {
-        speechSynthesisRef.current.cancel();
-      }
+    if (speechSynthesisRef.current && isSpeechEnabled) {
+      speechSynthesisRef.current.cancel();
     }
-    
     setIsSpeechEnabled(!isSpeechEnabled);
     setSpeakerIconsVisible(!isSpeechEnabled);
   };
@@ -222,93 +152,89 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   };
 
   const generateExplanation = async (questionIndex: number) => {
+    if (!questions[questionIndex]) return;
+
     if (generatedExplanations[questionIndex]) {
       setSelectedExplanation(generatedExplanations[questionIndex]);
-      if (isSpeechEnabled) {
-        readText(generatedExplanations[questionIndex]);
-      }
       return;
     }
 
     setGeneratingExplanationIndices(prev => [...prev, questionIndex]);
-    
+
     try {
       const question = questions[questionIndex];
-      const userAnswer = answers[questionIndex];
+      const userAnswer = answers[questionIndex] || '';
       const isCorrect = question.correctAnswer === userAnswer;
-      
+
       const prompt = `
 You are an educational assistant helping students understand quiz questions.
 
 Question: ${question.question}
 
 Options:
-${question.options.map((opt, i) => `${i+1}. ${opt}`).join('\n')}
+${question.options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}
 
 Correct answer: ${question.correctAnswer}
-Student's answer: ${userAnswer}
+Student's answer: ${userAnswer || 'None'}
 Was the student correct? ${isCorrect ? 'Yes' : 'No'}
 
 Please provide a detailed explanation of why the correct answer is right, and why the other options are wrong. 
 Include relevant concepts, examples, and connections to NCERT material where possible.
 Keep your explanation clear, educational, and around 150-200 words.
 `;
-      
+
       const response = await fetch(aiConfig.endpoint, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Authorization": `Bearer ${aiConfig.apiKey}`,
-          "HTTP-Referer": aiConfig.referer,
-          "X-Title": aiConfig.siteTitle,
-          "Content-Type": "application/json"
+          'Authorization': `Bearer ${aiConfig.apiKey}`,
+          'HTTP-Referer': aiConfig.referer,
+          'X-Title': aiConfig.siteTitle,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          "model": aiConfig.model,
-          "messages": [
+          model: aiConfig.model,
+          messages: [
             {
-              "role": "system",
-              "content": "You are an educational assistant that creates clear, helpful explanations for quiz questions."
+              role: 'system',
+              content: 'You are an educational assistant that creates clear, helpful explanations for quiz questions.',
             },
             {
-              "role": "user",
-              "content": prompt
-            }
+              role: 'user',
+              content: prompt,
+            },
           ],
-          "temperature": 0.7,
-          "max_tokens": 500
-        })
+          temperature: 0.7,
+          max_tokens: 500,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
       }
-      
+
       const data = await response.json();
-      const generatedExplanation = data.choices[0].message.content;
-      
-      const newExplanations = { ...generatedExplanations };
-      newExplanations[questionIndex] = generatedExplanation;
-      
-      setGeneratedExplanations(newExplanations);
+      const generatedExplanation = data?.choices?.[0]?.message?.content || 'No explanation available.';
+
+      setGeneratedExplanations(prev => ({
+        ...prev,
+        [questionIndex]: generatedExplanation,
+      }));
       setSelectedExplanation(generatedExplanation);
-      
-      if (isSpeechEnabled) {
-        readText(generatedExplanation);
-      }
     } catch (error) {
-      console.error("Error generating explanation:", error);
-      setSelectedExplanation("Sorry, there was an error generating the explanation. Please try again later.");
-      if (isSpeechEnabled) {
-        readText("Sorry, there was an error generating the explanation. Please try again later.");
-      }
+      console.error('Error generating explanation:', error);
+      setSelectedExplanation('Sorry, there was an error generating the explanation. Please try again later.');
     } finally {
       setGeneratingExplanationIndices(prev => prev.filter(idx => idx !== questionIndex));
     }
   };
 
   const score = calculateScore();
-  const percentage = Math.round((score / questions.length) * 100);
-  const questionsAttempted = answers.filter((answer) => answer !== '').length;
+  const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
+  const questionsAttempted = answers.filter(answer => answer !== '').length;
+
+  if (!questions || questions.length === 0) {
+    return <div className="text-center p-8">No questions available. Please try again.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4 relative" ref={containerRef}>
@@ -318,10 +244,10 @@ Keep your explanation clear, educational, and around 150-200 words.
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Generated Quiz</h2>
               <div className="flex items-center gap-3">
-                <button 
+                <button
                   onClick={toggleMasterSpeech}
                   className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  title={isSpeechEnabled ? "Mute all speech" : "Unmute speech"}
+                  title={isSpeechEnabled ? 'Mute all speech' : 'Unmute speech'}
                 >
                   {isSpeechEnabled ? (
                     <Volume2 className="h-5 w-5 text-pink-500" />
@@ -341,7 +267,7 @@ Keep your explanation clear, educational, and around 150-200 words.
             </div>
 
             <div className="flex justify-between items-center mb-4">
-              <button 
+              <button
                 onClick={handlePrevious}
                 disabled={currentQuestionIndex === 0}
                 className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -349,12 +275,10 @@ Keep your explanation clear, educational, and around 150-200 words.
               >
                 <ChevronLeft className="h-5 w-5 text-gray-700" />
               </button>
-              
               <p className="font-medium text-gray-900">
                 Question {currentQuestionIndex + 1} of {questions.length}
               </p>
-              
-              <button 
+              <button
                 onClick={handleNext}
                 disabled={currentQuestionIndex === questions.length - 1 || !answers[currentQuestionIndex]}
                 className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -379,7 +303,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                   </button>
                 )}
               </div>
-              
+
               <div className="space-y-3">
                 {questions[currentQuestionIndex].options.map((option, optionIndex) => (
                   <label
@@ -437,7 +361,7 @@ Keep your explanation clear, educational, and around 150-200 words.
               ) : (
                 <button
                   onClick={handleSubmit}
-                  disabled={answers.some((answer) => !answer)}
+                  disabled={answers.some(answer => !answer)}
                   className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:opacity-50"
                 >
                   Submit Test
@@ -510,8 +434,8 @@ Keep your explanation clear, educational, and around 150-200 words.
                           answers[index] === questions[index].correctAnswer
                             ? 'bg-green-500'
                             : answers[index]
-                              ? 'bg-red-500'
-                              : 'bg-gray-300'
+                            ? 'bg-red-500'
+                            : 'bg-gray-300'
                         } ${currentQuestionIndex === index ? 'ring-2 ring-pink-500' : ''}`}
                         title={`Question ${index + 1}: ${
                           answers[index] === questions[index].correctAnswer ? 'Correct' : answers[index] ? 'Incorrect' : 'Unanswered'
@@ -521,7 +445,7 @@ Keep your explanation clear, educational, and around 150-200 words.
                   </div>
 
                   <div className="flex justify-between items-center mb-4">
-                    <button 
+                    <button
                       onClick={handlePrevious}
                       disabled={currentQuestionIndex === 0}
                       className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -529,12 +453,10 @@ Keep your explanation clear, educational, and around 150-200 words.
                     >
                       <ChevronLeft className="h-5 w-5 text-gray-700" />
                     </button>
-                    
                     <p className="font-medium text-gray-900">
                       Question {currentQuestionIndex + 1} of {questions.length}
                     </p>
-                    
-                    <button 
+                    <button
                       onClick={handleNext}
                       disabled={currentQuestionIndex === questions.length - 1}
                       className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -551,10 +473,10 @@ Keep your explanation clear, educational, and around 150-200 words.
                       </p>
                       <div className="flex gap-2">
                         {speakerIconsVisible && (
-                          <button 
+                          <button
                             onClick={() => {
-                              let textToRead = questions[currentQuestionIndex].question + ". ";
-                              textToRead += "Options: ";
+                              let textToRead = questions[currentQuestionIndex].question + '. ';
+                              textToRead += 'Options: ';
                               questions[currentQuestionIndex].options.forEach((opt, i) => {
                                 textToRead += `Option ${i + 1}: ${opt}. `;
                               });
@@ -578,8 +500,8 @@ Keep your explanation clear, educational, and around 150-200 words.
                             ${questions[currentQuestionIndex].correctAnswer === option
                               ? 'bg-green-50'
                               : answers[currentQuestionIndex] === option
-                                ? 'bg-red-50'
-                                : 'bg-white'
+                              ? 'bg-red-50'
+                              : 'bg-white'
                             }`}
                         >
                           <div className="flex items-center gap-3">
@@ -594,9 +516,9 @@ Keep your explanation clear, educational, and around 150-200 words.
                               </button>
                             )}
                             {questions[currentQuestionIndex].correctAnswer === option ? (
-                              <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />
+                              <CheckCircle className="h-5 w-5 text-green-500 ml-2" />
                             ) : answers[currentQuestionIndex] === option ? (
-                              <XCircle className="h-5 w-5 text-red-500 ml-auto" />
+                              <XCircle className="h-5 w-5 text-red-500 ml-2" />
                             ) : null}
                           </div>
                         </div>
@@ -609,13 +531,16 @@ Keep your explanation clear, educational, and around 150-200 words.
                       disabled={isGeneratingExplanationForQuestion(currentQuestionIndex)}
                     >
                       <BookOpen className="h-4 w-4" />
-                      {isGeneratingExplanationForQuestion(currentQuestionIndex) ? "Generating..." : 
-                       generatedExplanations[currentQuestionIndex] ? "View Explanation" : (
-                        <>
-                          <Sparkles className="h-3 w-3" />
-                          Generate AI Explanation
-                        </>
-                       )}
+                      {isGeneratingExplanationForQuestion(currentQuestionIndex)
+                        ? 'Generating...'
+                        : generatedExplanations[currentQuestionIndex]
+                        ? 'View Explanation'
+                        : (
+                            <>
+                              <Sparkles className="h-3 w-3" />
+                              Generate AI Explanation
+                            </>
+                          )}
                     </button>
                   </div>
 
@@ -628,7 +553,6 @@ Keep your explanation clear, educational, and around 150-200 words.
                       <ChevronLeft className="h-4 w-4" />
                       Previous
                     </button>
-                    
                     <button
                       onClick={handleNext}
                       disabled={currentQuestionIndex === questions.length - 1}
@@ -678,13 +602,13 @@ Keep your explanation clear, educational, and around 150-200 words.
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
-            <div className="overflow-y-auto flex-grow pr-2" style={{ maxHeight: "60vh" }}>
+
+            <div className="overflow-y-auto flex-grow pr-2" style={{ maxHeight: '60vh' }}>
               <div className="flex gap-2 items-start">
                 <p className="text-gray-700 whitespace-pre-line">{selectedExplanation}</p>
                 {speakerIconsVisible && (
                   <button
-                    onClick={() => readText(selectedExplanation || "")}
+                    onClick={() => readText(selectedExplanation || '')}
                     className="text-pink-500 hover:text-pink-600 flex-shrink-0 mt-1"
                     title="Read explanation"
                   >
@@ -695,7 +619,7 @@ Keep your explanation clear, educational, and around 150-200 words.
             </div>
 
             <div className="mt-4 pt-2 border-t border-gray-200">
-              <button 
+              <button
                 onClick={() => setSelectedExplanation(null)}
                 className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
