@@ -37,7 +37,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Speech synthesis setup
+  
   useEffect(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       speechSynthesisRef.current = window.speechSynthesis;
@@ -54,15 +54,14 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     };
   }, []);
 
-  // Optional: Auto-read when navigating to new question
-  // Comment out the following useEffect if you don't want auto-read on navigation
+ 
   useEffect(() => {
     if (!submitted && isSpeechEnabled && questions.length > 0) {
       readCurrentQuestionAndOptions();
     }
   }, [currentQuestionIndex]);
 
-  // Timer for the quiz
+  // Timer for  quiz
   useEffect(() => {
     if (!submitted) {
       const timer = setInterval(() => {
