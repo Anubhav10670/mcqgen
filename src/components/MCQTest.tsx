@@ -41,8 +41,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
   useEffect(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       speechSynthesisRef.current = window.speechSynthesis;
-      // Optional: Auto-read first question when test starts
-      // Comment out the following if you don't want auto-read on start
+      
       if (!submitted && isSpeechEnabled && questions.length > 0) {
         readCurrentQuestionAndOptions();
       }
@@ -61,7 +60,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
     }
   }, [currentQuestionIndex]);
 
-  // Timer for  quiz
+  // Timer of  quiz
   useEffect(() => {
     if (!submitted) {
       const timer = setInterval(() => {
