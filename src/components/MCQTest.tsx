@@ -200,7 +200,7 @@ Provide a detailed explanation:
             },
             {
               role: 'user',
-              content: prompt ,
+              content: prompt,
             },
           ],
           temperature: 0.7,
