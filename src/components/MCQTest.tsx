@@ -164,7 +164,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
       const userAnswer = answers[questionIndex] || '';
       const isCorrect = question.correctAnswer === userAnswer;
 
-      cconst prompt = `
+      const prompt = `
 You are an educational assistant helping students understand quiz questions.
 
 Question: ${question.question}
@@ -181,7 +181,7 @@ Provide a detailed explanation:
 - Why the other options are incorrect.
 - Use relevant concepts, examples, and connect to NCERT material where applicable.
 - Keep the explanation clear, educational, and around 150–200 words.
-`;
+` ;
 
       const response = await fetch(aiConfig.endpoint, {
         method: 'POST',
