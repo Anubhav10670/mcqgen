@@ -164,7 +164,7 @@ function MCQTest({ questions, onReset }: MCQTestProps) {
       const userAnswer = answers[questionIndex] || '';
       const isCorrect = question.correctAnswer === userAnswer;
 
-      const prompt = `
+      cconst prompt = `
 You are an educational assistant helping students understand quiz questions.
 
 Question: ${question.question}
@@ -172,13 +172,15 @@ Question: ${question.question}
 Options:
 ${question.options.map((opt, i) => `${i + 1}. ${opt}`).join('\n')}
 
-Correct answer: ${question.correctAnswer}
-Student's answer: ${userAnswer || 'None'}
+Correct Answer: ${question.correctAnswer}
+Student's Answer: ${userAnswer || 'None'}
 Was the student correct? ${isCorrect ? 'Yes' : 'No'}
 
-Please provide a detailed explanation of why the correct answer is right, and why the other options are wrong. 
-Include relevant concepts, examples, and connections to NCERT material where possible.
-Keep your explanation clear, educational, and around 150-200 words.
+Provide a detailed explanation:
+- Why the correct answer is right.
+- Why the other options are incorrect.
+- Use relevant concepts, examples, and connect to NCERT material where applicable.
+- Keep the explanation clear, educational, and around 150–200 words.
 `;
 
       const response = await fetch(aiConfig.endpoint, {
@@ -198,7 +200,7 @@ Keep your explanation clear, educational, and around 150-200 words.
             },
             {
               role: 'user',
-              content: prompt,
+              content: prompt ,
             },
           ],
           temperature: 0.7,
