@@ -16,9 +16,9 @@ interface AIConfig {
 }
 
 const aiConfig: AIConfig = {
-  apiKey: "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",
+  apiKey: "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",
   endpoint: "https://openrouter.ai/api/v1/chat/completions",
-  model: "mistralai/mistral-small-24b-instruct-2501:free",
+  model: "deepseek/deepseek-prover-v2:free",
   referer: window.location.origin,
   siteTitle: "NCERTquest"
 };
