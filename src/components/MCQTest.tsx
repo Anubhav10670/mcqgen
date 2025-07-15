@@ -16,9 +16,9 @@ interface AIConfig {
 }
 
 const aiConfig: AIConfig = {
-  apiKey: "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",
+  apiKey: "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",
   endpoint: "https://openrouter.ai/api/v1/chat/completions",
-  model: "deepseek/deepseek-prover-v2:free",
+  model: "mistralai/mistral-small-3.2-24b-instruct:free",
   referer: window.location.origin,
   siteTitle: "NCERTquest"
 };
@@ -181,7 +181,7 @@ Provide a detailed explanation:
 - Why the other options are incorrect.
 - Use relevant concepts, examples, and connect to NCERT material where applicable.
 - Keep the explanation clear, educational, and around 150–200 words.
-` ;
+ ` ;
 
       const response = await fetch(aiConfig.endpoint, {
         method: 'POST',
