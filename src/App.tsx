@@ -27,7 +27,7 @@ const prompt = `I want you to generate Extremely tough ${numQuestions} multiple-
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer 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',
+          'Authorization': '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',
           'HTTP-Referer': 'https://www.sitename.com',
           'X-Title': 'SiteName',
           'Content-Type': 'application/json',
