@@ -34,7 +34,7 @@ const prompt = `I want you to generate Extremely tough ${numQuestions} multiple-
         },
         body: JSON.stringify({
           model: 'mistralai/mistral-small-3.1-24b-instruct:free',
-          messages: [{ role: 'user', content: prompt }],
+          messages: prompt,
         }),
       });
 
