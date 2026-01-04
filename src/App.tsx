@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BookOpen, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { BookOpen, AlertCircle } from 'lucide-react';
 import MCQTest from './components/MCQTest';
 import InputForm from './components/InputForm';
 
@@ -15,41 +15,128 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showTest, setShowTest] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // TEMPORARY: If you must call the provider from the browser while you work,
+  // put your key here for local testing only. Do NOT commit this to source.
+  // Strongly recommended: move this to a server-side proxy as soon as possible.
+  const OPENROUTER_API_KEY = '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';
 
   const generateQuestions = async (text: string, numQuestions: number) => {
     setLoading(true);
     setError(null);
-    
-const prompt = `I want you to generate Extremely tough ${numQuestions} multiple-choice quiz questions based on the following text. The output should be strictly in valid JSON format, containing only the questions, options, and correct answers. The JSON should be correct with no syntax errors and should avoid using backticks or any other formatting characters. Do not include any additional remarks, reasoning, or explanations—only the JSON output (the questions should be valuable and good with meaning not like , in the passage , in the page , explain the question well you are supposed to clear the concepts of student via mcqs make the questions mid difficult avoid using questions whuich refers or asks for activity number only direct questions). Format the response as a JSON array where each question object follows this structure: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}. Ensure the JSON is valid and contains meaningful questions which clears main topics of students and avoid activities for generation . Do not make any errors in the JSON file, and format it carefully , the output should be in text format dont box it. Text: ${text}`;
 
+    const prompt = `I want you to generate Extremely tough ${numQuestions} multiple-choice quiz questions based on the following text. The output should be strictly in valid JSON format, containing only the questions, options, and correct answers. The JSON should be correct with no syntax errors and should avoid using backticks or any other formatting characters. Do not include any additional remarks, reasoning, or explanations—only the JSON output. Format the response as a JSON array where each question object follows this structure: {"question": "...", "options": ["...", "...", "...", "..."], "correctAnswer": "..."}. Ensure the JSON is valid and contains meaningful questions which clear main topics for students and avoid activities for generation. Text: ${text}`;
+
+    // Cancel any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
+      if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY.includes('<REPLACE')) {
+        throw new Error(
+          'No API key provided. For frontend testing only: set OPENROUTER_API_KEY in this file. Move the key to a backend proxy for production.',
+        );
+      }
+
+      const providerPayload = {
+        model: 'mistralai/mistral-small-3.1-24b-instruct:free',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        // you can add other fields like max_tokens if supported by the provider
+      };
+
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer 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',
-          'HTTP-Referer': 'https://www.sitename.com',
-          'X-Title': 'SiteName',
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         },
-        body: JSON.stringify({
-          model: 'mistralai/mistral-small-3.1-24b-instruct:free',
-          messages: prompt,
-        }),
+        signal: controller.signal,
+        body: JSON.stringify(providerPayload),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(await response.json())
-      const generatedQuestions = JSON.parse(data.choices[0].message.content);
-      setQuestions(generatedQuestions);
+      // Read raw text so we can surface helpful errors even when not JSON
+      const textBody = await response.text();
+
+      if (!response.ok) {
+        // Try to extract a helpful message from JSON if present
+        let msg = textBody;
+        try {
+          const parsedErr = JSON.parse(textBody);
+          msg = parsedErr?.error?.message ?? parsedErr?.message ?? JSON.stringify(parsedErr);
+        } catch {
+          // keep raw textBody
+        }
+        throw new Error(`Provider error (${response.status}): ${msg}`);
+      }
+
+      // Parse provider JSON if possible
+      let providerJson: any;
+      try {
+        providerJson = JSON.parse(textBody);
+      } catch {
+        // If response isn't JSON, treat it as plain text
+        providerJson = textBody;
+      }
+
+      // Extract model text: many chat APIs use choices[0].message.content
+      const modelText =
+        (providerJson && providerJson.choices?.[0]?.message?.content) ||
+        (providerJson && providerJson.choices?.[0]?.text) ||
+        providerJson?.output ||
+        (typeof providerJson === 'string' ? providerJson : JSON.stringify(providerJson));
+
+      // Attempt to parse the model's returned text as JSON (because we requested JSON)
+      let generatedQuestions: any;
+      try {
+        generatedQuestions = typeof modelText === 'string' ? JSON.parse(modelText) : modelText;
+      } catch (err) {
+        // If parsing fails, provide a helpful error showing the raw content
+        throw new Error('AI returned invalid JSON. Response content: ' + String(modelText).slice(0, 2000));
+      }
+
+      // Validate structure: it should be an array of question objects
+      if (!Array.isArray(generatedQuestions)) {
+        throw new Error('AI output is not a JSON array. Output: ' + JSON.stringify(generatedQuestions));
+      }
+
+      for (const [idx, q] of generatedQuestions.entries()) {
+        if (
+          typeof q.question !== 'string' ||
+          !Array.isArray(q.options) ||
+          typeof q.correctAnswer !== 'string'
+        ) {
+          throw new Error(
+            `AI output has unexpected structure at index ${idx}. Each item must have question:string, options:string[], correctAnswer:string. Item: ${JSON.stringify(
+              q,
+            )}`,
+          );
+        }
+      }
+
+      setQuestions(generatedQuestions as Question[]);
       setShowTest(true);
-    } catch (err) {
-      setError('Failed to generate questions. Please try again.');
-      console.error(err);
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        // Request was cancelled: don't set a user-facing error
+        console.log('Request aborted');
+      } else {
+        console.error('generateQuestions error:', err);
+        setError(err?.message ?? 'Failed to generate questions. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Cleanup on unmount: abort any in-flight request
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const resetTest = () => {
     setShowTest(false);
