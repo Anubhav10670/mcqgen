@@ -39,6 +39,7 @@ const prompt = `I want you to generate Extremely tough ${numQuestions} multiple-
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(await response.json())
       const generatedQuestions = JSON.parse(data.choices[0].message.content);
       setQuestions(generatedQuestions);
       setShowTest(true);
