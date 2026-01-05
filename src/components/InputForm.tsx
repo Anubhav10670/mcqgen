@@ -8,12 +8,13 @@ interface InputFormProps {
 
 function InputForm({ onSubmit, loading }: InputFormProps) {
   const [text, setText] = useState('');
-  const [numQuestions, setNumQuestions] = useState(10);
+  const [numQuestions, setNumQuestions] = useState('10');
+  const num = Number(numQuestions);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (text.trim() && numQuestions > 0) {
-      onSubmit(text.trim(), numQuestions);
+    if (text.trim() && num > 0) {
+      onSubmit(text.trim(), num);
     }
   };
 
