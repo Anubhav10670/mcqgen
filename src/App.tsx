@@ -17,9 +17,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // TEMPORARY: If you must call the provider from the browser while you work,
-  // put your key here for local testing only. Do NOT commit this to source.
-  // Strongly recommended: move this to a server-side proxy as soon as possible.
+  
   const OPENROUTER_API_KEY = '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';
 
   const generateQuestions = async (text: string, numQuestions: number) => {
@@ -44,7 +42,7 @@ function App() {
         model: 'mistralai/mistral-small-3.1-24b-instruct:free',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        // you can add other fields like max_tokens if supported by the provider
+       
       };
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -57,17 +55,17 @@ function App() {
         body: JSON.stringify(providerPayload),
       });
 
-      // Read raw text so we can surface helpful errors even when not JSON
+      
       const textBody = await response.text();
 
       if (!response.ok) {
-        // Try to extract a helpful message from JSON if present
+       
         let msg = textBody;
         try {
           const parsedErr = JSON.parse(textBody);
           msg = parsedErr?.error?.message ?? parsedErr?.message ?? JSON.stringify(parsedErr);
         } catch {
-          // keep raw textBody
+        
         }
         throw new Error(`Provider error (${response.status}): ${msg}`);
       }
