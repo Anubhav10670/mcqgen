@@ -32,9 +32,9 @@ function App() {
     abortRef.current = controller;
 
     try {
-      if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY.includes('<REPLACE')) {
+      if (!OPENROUTER_API_KEY) {
         throw new Error(
-          'No API key provided. For frontend testing only: set OPENROUTER_API_KEY in this file. Move the key to a backend proxy for production.',
+          'No API key provided.',
         );
       }
 
@@ -70,16 +70,16 @@ function App() {
         throw new Error(`Provider error (${response.status}): ${msg}`);
       }
 
-      // Parse provider JSON if possible
+      
       let providerJson: any;
       try {
         providerJson = JSON.parse(textBody);
       } catch {
-        // If response isn't JSON, treat it as plain text
+       
         providerJson = textBody;
       }
 
-      // Extract model text: many chat APIs use choices[0].message.content
+      
       const modelText =
         (providerJson && providerJson.choices?.[0]?.message?.content) ||
         (providerJson && providerJson.choices?.[0]?.text) ||
