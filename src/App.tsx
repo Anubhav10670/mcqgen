@@ -18,7 +18,7 @@ function App() {
   const abortRef = useRef<AbortController | null>(null);
 
   
-  const OPENROUTER_API_KEY = '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';
+  const OPENROUTER_API_KEY = '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';
 
   const generateQuestions = async (text: string, numQuestions: number) => {
     setLoading(true);
