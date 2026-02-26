@@ -39,7 +39,7 @@ function App() {
       }
 
       const providerPayload = {
-        model: 'mistralai/mistral-small-3.1-24b-instruct:free',
+        model: 'google/gemma-3-27b-it:free',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
        
