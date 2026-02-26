@@ -8,14 +8,13 @@ interface InputFormProps {
 
 function InputForm({ onSubmit, loading }: InputFormProps) {
   const [text, setText] = useState('');
-  const [numQuestions, setNumQuestions] = useState<string>('10'); // default 10 as string
-
-  const num = parseInt(numQuestions) || 10; // always use 10 if invalid/empty
+  const [numQuestions, setNumQuestions] = useState<string>('10');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (text.trim() && num > 0) {
-      onSubmit(text.trim(), num);
+    const n = parseInt(numQuestions);
+    if (text.trim() && !isNaN(n) && n >= 10 && n <= 30) {
+      onSubmit(text.trim(), n);
     }
   };
 
@@ -47,19 +46,22 @@ function InputForm({ onSubmit, loading }: InputFormProps) {
     }
   };
 
-  // Handle changes in the number input
   const handleNumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (value === '') {
-      // allow clearing the input
-      setNumQuestions('');
-    } else {
-      const n = parseInt(value);
-      if (!isNaN(n)) {
-        // clamp between 10 and 30
-        setNumQuestions(String(Math.min(30, Math.max(10, n))));
-      }
+    // Allow free typing — only digits or empty string
+    if (value === '' || /^\d+$/.test(value)) {
+      setNumQuestions(value);
     }
+  };
+
+  const handleNumBlur = () => {
+    const n = parseInt(numQuestions);
+    if (isNaN(n) || n < 10) {
+      setNumQuestions('10');
+    } else if (n > 30) {
+      setNumQuestions('30');
+    }
+    // valid range: leave as-is
   };
 
   return (
@@ -98,13 +100,14 @@ function InputForm({ onSubmit, loading }: InputFormProps) {
         {/* Number of Questions */}
         <div className="mb-6">
           <label htmlFor="numQuestions" className="block text-sm font-medium text-gray-700 mb-2">
-            Number of questions
+            Number of questions (10–30)
           </label>
           <input
             type="number"
             id="numQuestions"
             value={numQuestions}
             onChange={handleNumChange}
+            onBlur={handleNumBlur}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-gray-50"
             min={10}
             max={30}
