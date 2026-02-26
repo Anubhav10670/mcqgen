@@ -87,7 +87,17 @@ function InputForm({ onSubmit, loading }: InputFormProps) {
             type="number"
             id="numQuestions"
             value={numQuestions}
-            onChange={(e) => setNumQuestions(Math.max(1, parseInt(e.target.value) || 1))}
+            onChange={(e) => {
+  const value = e.target.value;
+  if (value === '') {
+    setNumQuestions(''); // allow clearing the input
+  } else {
+    const num = parseInt(value);
+    if (!isNaN(num)) {
+      setNumQuestions(Math.min(30, Math.max(10, num))); // enforce min/max only when valid
+    }
+  }
+}}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-gray-50"
             min="10"
             max="30"
