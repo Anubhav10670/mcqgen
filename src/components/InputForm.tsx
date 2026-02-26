@@ -8,8 +8,9 @@ interface InputFormProps {
 
 function InputForm({ onSubmit, loading }: InputFormProps) {
   const [text, setText] = useState('');
-  const [numQuestions, setNumQuestions] = useState('10');
-  const num = Number(numQuestions);
+  const [numQuestions, setNumQuestions] = useState<string>('10'); // default 10 as string
+
+  const num = parseInt(numQuestions) || 10; // always use 10 if invalid/empty
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +35,7 @@ function InputForm({ onSubmit, loading }: InputFormProps) {
               const pageText = txt.items.map((s: any) => s.str).join('');
               fullText += `Page ${i}:\n${pageText}\n\n`;
             }
-            setText(fullText); // Populate the same textarea with the extracted text
+            setText(fullText);
           }
         };
       } catch (err) {
@@ -43,6 +44,21 @@ function InputForm({ onSubmit, loading }: InputFormProps) {
       }
     } else {
       alert('Please select a valid PDF file');
+    }
+  };
+
+  // Handle changes in the number input
+  const handleNumChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '') {
+      // allow clearing the input
+      setNumQuestions('');
+    } else {
+      const n = parseInt(value);
+      if (!isNaN(n)) {
+        // clamp between 10 and 30
+        setNumQuestions(String(Math.min(30, Math.max(10, n))));
+      }
     }
   };
 
@@ -79,6 +95,7 @@ function InputForm({ onSubmit, loading }: InputFormProps) {
           </div>
         </div>
 
+        {/* Number of Questions */}
         <div className="mb-6">
           <label htmlFor="numQuestions" className="block text-sm font-medium text-gray-700 mb-2">
             Number of questions
@@ -87,20 +104,12 @@ function InputForm({ onSubmit, loading }: InputFormProps) {
             type="number"
             id="numQuestions"
             value={numQuestions}
-            onChange={(e) => {
-  const value = e.target.value;
-  if (value === '') {
-    setNumQuestions(''); // allow clearing the input
-  } else {
-    const num = parseInt(value);
-    if (!isNaN(num)) {
-      setNumQuestions(Math.min(30, Math.max(10, num))); // enforce min/max only when valid
-    }
-  }
-}}
+            onChange={handleNumChange}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-300 bg-gray-50"
-            min="10"
-            max="30"
+            min={10}
+            max={30}
+            step={1}
+            placeholder="10"
             required
           />
         </div>
